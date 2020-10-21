@@ -15,7 +15,6 @@
 #else
 #endif
 
-
 //struct for thread safe access
 struct _array {
     atomic_size_t   capacity;   // atomic size_t so no race conditions
@@ -24,18 +23,6 @@ struct _array {
     ccds_rwlock*    buff_lock;  // Reader-Writer lock for the buffer;
 };
 typedef struct _array array;
-
-/* 
-NAME:
-DESCRIPTION:
-PARAMETERS:
-    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
-        Otherwise e is NULL, and no errors will be set 
-RETURNS:
-ERRORS:
-    CCDS_EOK: The function completed without error
-*/
-
 
 /* 
 NAME:
@@ -66,20 +53,36 @@ NAME:
 DESCRIPTION:
     Frees memory allocated to a struct _array by the funciton array_new.
 PARAMETERS:
-    array *: Pointer to an array to be freed 
+    a: Pointer to an array to be freed 
     e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
         Otherwise e is NULL, and no errors will be set 
 ERRORS:
     CCDS_EOK: The function completed without error
 */
 void    array_free(array * a, ccds_error * e);
+
+/* 
+NAME:
+    array_length
+DESCRIPTION:
+    Returns the capacity of the array, to be consistent accross all data structures
+PARAMETERS:
+    a:  Pointer to the array we are getting the capacity of 
+    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
+        Otherwise e is NULL, and no errors will be set 
+RETURNS:
+    size_t: a->capacity
+ERRORS:
+    CCDS_EINVLD_PARAM:  If a == NULL
+    CCDS_EOK: The function completed without error
+*/
 size_t  array_length(array * a, ccds_error * e);
 
 /* 
 NAME:
     array_get
 DESCRIPTION:
-    Gets the current element occupying indx
+    Gets the element occupying indx
 PARAMETERS:
     a: Array we are trying to access
     indx: Index we want to check
@@ -96,6 +99,27 @@ void *  array_get(array * a, size_t indx, ccds_error * e);
 
 /* 
 NAME:
+    array_getn
+DESCRIPTION:
+    Copies from the specified indx to indx + n. Assumes buffer has space
+        for n void *'s and fills buffer with whats in the array.
+PARAMETERS:
+    a:  Pointer to the array we are reading from
+    indx:   Starting index to copy from
+    buffer: Array that the results will be written into
+    n:  Number of elements we are copying and size of buffer
+    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
+        Otherwise e is NULL, and no errors will be set 
+RETURNS:
+    true: If the function completes without error
+    false: otherwise
+ERRORS:
+    CCDS_EOK: The function completed without error
+*/
+bool    array_getn(array * a, size_t indx, void ** buffer, size_t n, ccds_error * e);
+
+/* 
+NAME:
     array_set
 DESCRIPTION:
     Writes the specified element at indx in the array
@@ -107,20 +131,107 @@ ERRORS:
     CCDS_EOK: The function completed without error
 */
 void *  array_set(array * a, size_t indx, void * p, ccds_error * e);
+
+/* 
+NAME:
+    array_setn
+DESCRIPTION:
+    Writes the number of elements specified from buffer into array starting at indx
+PARAMETERS:
+    a:  Pointer to the array we are  writing to
+    indx:   Starting index 
+    buffer: Array that holds elems we are writing into the array
+    n:  Number of elements we are writing
+    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
+        Otherwise e is NULL, and no errors will be set 
+RETURNS:
+    true:   if the fucntion completes without error
+    false:  otherwise
+ERRORS:
+    CCDS_EOK: The function completed without error
+*/
+bool    array_setn(array * a, size_t indx, void ** buff, size_t n, ccds_error * e);
+
+/* 
+NAME:
+    array_resize
+DESCRIPTION:
+    Resizes the array to the size specified 
+PARAMETERS:
+    a: the array we are resizing
+    size: size we want the arrayto be
+    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
+        Otherwise e is NULL, and no errors will be set 
+RETURNS:
+    true:   if the fucntion completes without error
+    false:  otherwise
+ERRORS:
+    CCDS_EOK: The function completed without error
+*/
 bool    array_resize(array * a, size_t size, ccds_error * e);
+
+/* 
+NAME:
+DESCRIPTION:
+PARAMETERS:
+    a: 
+    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
+        Otherwise e is NULL, and no errors will be set 
+RETURNS:
+    true:   if the fucntion completes without error
+    false:  otherwise
+ERRORS:
+    CCDS_EOK: The function completed without error
+*/
 bool    array_shiftr(array * a, size_t indx, size_t len, size_t off, void ** buff, size_t buff_len, ccds_error * e);
+
+/* 
+NAME:
+DESCRIPTION:
+PARAMETERS:
+    a: 
+    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
+        Otherwise e is NULL, and no errors will be set 
+RETURNS:
+    true:   if the fucntion completes without error
+    false:  otherwise
+ERRORS:
+    CCDS_EOK: The function completed without error
+*/
 bool    array_shiftl(array * a, size_t indx, size_t len, size_t off, void ** buff, size_t buff_len, ccds_error * e);
+
+/* 
+NAME:
+DESCRIPTION:
+PARAMETERS:
+    a: 
+    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
+        Otherwise e is NULL, and no errors will be set 
+RETURNS:
+    true:   if the fucntion completes without error
+    false:  otherwise
+ERRORS:
+    CCDS_EOK: The function completed without error
+*/
 bool    array_swap(array * a, size_t indx1, size_t indx2, ccds_error * e);
 
+/* 
+NAME:
+    array_check_set
+DESCRIPTION:
+    Checks the given poision against val1 if cmp returns true then sets 
+        a->buffer[i] to val2
+PARAMETERS:
+    a: 
+    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
+        Otherwise e is NULL, and no errors will be set 
+RETURNS:
+    true:   if the fucntion completes without error
+    false:  otherwise
+ERRORS:
+    CCDS_EOK: The function completed without error
+*/
+bool    array_check_set(array * a, size_t indx, bool (*cmp) (void *,void *), void * val1, void * val2, ccds_error * e);
 
-#define ARRAY_FOREACH(arr, data, __USER__CODE__) {      \
-     ccds_rwlock_wlock(arr->buff_lock);                 \
-     for(size_t __i = 0; i < arr->capacity; __i++)      \
-     {                                                  \
-        data = &arr->buffer[i];                         \
-        __USER__CODE__                                  \
-     }                                                  \
-     ccds_rwlock_wunlock(arr->buff_lock);               \
-}                                                        
-
+void    array_foreach(array * a, void (*fn)(void **));
 #endif
