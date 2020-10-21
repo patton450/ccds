@@ -1,0 +1,126 @@
+#ifndef CCDS_ARRAY_H
+#define CCDS_ARRAY_H
+
+#include <stdbool.h>
+#include <stdatomic.h>
+
+#include "mem.h"
+#include "util.h"
+#include "lock.h"
+#include "error.h"
+#include "log.h"
+
+#if __STDC_NO_ATOMICS__ 
+    //idk
+#else
+#endif
+
+
+//struct for thread safe access
+struct _array {
+    atomic_size_t   capacity;   // atomic size_t so no race conditions
+    void **         buffer;     // Have to use RWLock to keep in sync
+    memcfg *        mem;        // User defined memory mangement
+    ccds_rwlock*    buff_lock;  // Reader-Writer lock for the buffer;
+};
+typedef struct _array array;
+
+/* 
+NAME:
+DESCRIPTION:
+PARAMETERS:
+    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
+        Otherwise e is NULL, and no errors will be set 
+RETURNS:
+ERRORS:
+    CCDS_EOK: The function completed without error
+*/
+
+
+/* 
+NAME:
+    array_new
+DESCRIPTION:
+    Allocates space on the heap for a struct _array, if mem != NULL then
+        the funciton will allocate using mem->*alloc or ccds_d*alloc (see mem.h)
+        and set itself as the memcfg for the array. If mem == NULL, then 
+        the memory defaults are used ccds_d*alloc (see mem.h). Capacity is the inital 
+        capacity of the array note this funciton allocates (cap * sizeof(void *)) bytes.
+PARAMETERS:
+    cap: Inital capacity to set the array to
+    mem: Either a pointer to a memcfg, or NULL if defaults are to be used
+    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
+        Otherwise e is NULL, and no errors will be set 
+RETURNS:
+    array *: If we succesfully allocate everything needed for the array
+    NULL: If the funciton encounters an error
+ERRORS:
+    CCDS_EOK: The function completed without error
+    CCDS_EMEM_FAIL: One of the calls to allocate memory failed
+*/
+array * array_new(size_t cap, memcfg * mem, ccds_error * e);
+
+/* 
+NAME:
+    array_free
+DESCRIPTION:
+    Frees memory allocated to a struct _array by the funciton array_new.
+PARAMETERS:
+    array *: Pointer to an array to be freed 
+    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
+        Otherwise e is NULL, and no errors will be set 
+ERRORS:
+    CCDS_EOK: The function completed without error
+*/
+void    array_free(array * a, ccds_error * e);
+size_t  array_length(array * a, ccds_error * e);
+
+/* 
+NAME:
+    array_get
+DESCRIPTION:
+    Gets the current element occupying indx
+PARAMETERS:
+    a: Array we are trying to access
+    indx: Index we want to check
+    e: Pointer to an error enum, if e != NULL then error is set accordingly. 
+            Otherwise e is NULL, and no errors will be set 
+RETURNS:
+    void *: The current value of the array at indx
+ERRORS:
+    CCDS_EINDX_OB: indx >= a->capcity
+    CCDS_EINVLF_PARAM: a is NULL
+    CCDS_EOK: The function completed without error
+*/
+void *  array_get(array * a, size_t indx, ccds_error * e);
+
+/* 
+NAME:
+    array_set
+DESCRIPTION:
+    Writes the specified element at indx in the array
+PARAMETERS:
+    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
+        Otherwise e is NULL, and no errors will be set 
+RETURNS:
+ERRORS:
+    CCDS_EOK: The function completed without error
+*/
+void *  array_set(array * a, size_t indx, void * p, ccds_error * e);
+bool    array_resize(array * a, size_t size, ccds_error * e);
+bool    array_shiftr(array * a, size_t indx, size_t len, size_t off, void ** buff, size_t buff_len, ccds_error * e);
+bool    array_shiftl(array * a, size_t indx, size_t len, size_t off, void ** buff, size_t buff_len, ccds_error * e);
+bool    array_swap(array * a, size_t indx1, size_t indx2, ccds_error * e);
+
+
+#define ARRAY_FOREACH(arr, data, __USER__CODE__) {      \
+     ccds_rwlock_wlock(arr->buff_lock);                 \
+     for(size_t __i = 0; i < arr->capacity; __i++)      \
+     {                                                  \
+        data = &arr->buffer[i];                         \
+        __USER__CODE__                                  \
+     }                                                  \
+     ccds_rwlock_wunlock(arr->buff_lock);               \
+}                                                        
+
+#endif

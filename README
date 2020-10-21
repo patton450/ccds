@@ -1,0 +1,10 @@
+CCDS - Concurrent C Data Structures
+
+Goal:
+    Provide a library of thread safe data structures written in C.
+    Make the library API simple and consistent. Maintain clean, 
+    simple to understand code, while providing protability and
+    the user's ability to decide how they are allocating memory.
+
+
+
