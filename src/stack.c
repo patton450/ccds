@@ -17,7 +17,8 @@ stack * stack_new(memcfg * m, ccds_error * e){
 }
 
 void stack_free(stack * s, ccds_error * e){
-    if(s == NULL) {
+    if(s == NULL) { 
+        log_error("NULL stack passed into stack_free");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return;
     }
@@ -28,6 +29,7 @@ void stack_free(stack * s, ccds_error * e){
 
 size_t stack_length(stack * s, ccds_error * e) {
     if(s == NULL) {
+        log_error("NULL stack passed into stack_length");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return 0;
     }
@@ -36,6 +38,7 @@ size_t stack_length(stack * s, ccds_error * e) {
 
 void * stack_peek(stack * s, ccds_error * e){
     if(s == NULL) {
+        log_error("NULL stack passed into stack_peek");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return NULL;
     }
@@ -44,6 +47,7 @@ void * stack_peek(stack * s, ccds_error * e){
 
 void * stack_pop(stack * s, ccds_error * e){
     if(s == NULL) {
+        log_error("NULL stack passed into stack_pop");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return NULL;
     }
@@ -52,6 +56,7 @@ void * stack_pop(stack * s, ccds_error * e){
 
 bool stack_push(stack * s, void * data, ccds_error * e){
     if(s == NULL) {
+        log_error("NULL stack passed into stack_puch");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return false;
     }

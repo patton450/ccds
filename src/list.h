@@ -37,11 +37,15 @@ void *  list_remove_tail(list * l, ccds_error * e);
 
 bool    list_swap(list * l, size_t indx1, size_t indx2, ccds_error * e);
 
-void *  list_foldl(list * l, void * start, void * (*fn) (void *, void *));
-void *  list_foldr(list * l, void * start, void * (*fn) (void *, void *));
-void    list_map (list * l, void ** buff, size_t buff_len, void * (*fn) (void *)) ;
-void    list_filter(list * l, void ** buff, size_t buff_len, bool (*fn) (void *));
+void    list_foreach(list * l, void (*fn)(void**), ccds_error * e);
+void    list_foreachi(list * l, void (*fn)(void**), ccds_error * e);
 
-bool    list_any(list * l, bool (*fn) (void *));
-bool    list_all(list * l, bool (*fn) (void *));
+void *  list_foldl(list * l, void * start, void * (*fn) (void *, const void *), ccds_error * e);
+void *  list_foldr(list * l, void * start, void * (*fn) (const void *, void *), ccds_error * e);
+
+void    list_map (list * l, void ** buff, size_t buff_len, void * (*fn) (void *), ccds_error * e);
+void    list_filter(list * l, void ** buff, size_t buff_len, bool (*fn) (void *), ccds_error * e);
+
+bool    list_any(list * l, bool (*fn) (void *), ccds_error * e);
+bool    list_all(list * l, bool (*fn) (void *), ccds_error * e);
 #endif

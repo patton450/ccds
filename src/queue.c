@@ -18,6 +18,7 @@ queue * queue_new(memcfg * mem, ccds_error * e) {
 
 void queue_free(queue * q, ccds_error * e){
     if(q == NULL){
+        log_error("NULL queue passed into queue_free");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return;
     }
@@ -29,6 +30,7 @@ void queue_free(queue * q, ccds_error * e){
 
 size_t queue_length(queue * q, ccds_error * e){
     if(q == NULL){
+        log_error("NULL queue passed into queue_length");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return 0;
     }
@@ -38,6 +40,7 @@ size_t queue_length(queue * q, ccds_error * e){
 
 void * queue_peek(queue * q, ccds_error * e){
     if(q == NULL){
+        log_error("NULL queue passed into queue_peek");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return NULL;
     }
@@ -47,6 +50,7 @@ void * queue_peek(queue * q, ccds_error * e){
 
 void * queue_dequeue(queue * q, ccds_error * e){
     if(q == NULL){
+        log_error("NULL queue passed into queue_dequeue");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return NULL;
     }
@@ -56,6 +60,7 @@ void * queue_dequeue(queue * q, ccds_error * e){
 
 bool queue_enqueue(queue * q, void * data, ccds_error * e){
     if(q == NULL){
+        log_error("NULL queue passed into queue_enqueue");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return false;
     }
