@@ -183,7 +183,7 @@ RETURNS:
 ERRORS:
     CCDS_EOK: The function completed without error
 */
-bool    array_shiftr(array * a, size_t indx, size_t len, size_t off, void ** buff, size_t buff_len, ccds_error * e);
+bool    array_shiftr_fill(array * a, size_t indx, size_t off, void ** buff, size_t len, ccds_error * e);
 
 /* 
 NAME:
@@ -198,7 +198,8 @@ RETURNS:
 ERRORS:
     CCDS_EOK: The function completed without error
 */
-bool    array_shiftl(array * a, size_t indx, size_t len, size_t off, void ** buff, size_t buff_len, ccds_error * e);
+
+bool    array_shiftl_fill(array * a, size_t indx, size_t off, void ** buff, size_t len, ccds_error * e);
 
 /* 
 NAME:
@@ -234,4 +235,6 @@ ERRORS:
 bool    array_check_set(array * a, size_t indx, bool (*cmp) (void *,void *), void * val1, void * val2, ccds_error * e);
 
 void    array_foreach(array * a, void (*fn)(void **));
+
+void    array_foreachi(array * a, void (*fn)(void **, size_t));
 #endif

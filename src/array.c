@@ -102,44 +102,73 @@ void * array_get(array * a, size_t indx, ccds_error * e){
     ccds_rwlock_rlock(a->buff_lock);
     
     if(a == NULL) { 
+        ccds_rwlock_runlock(a->buff_lock);
+        
         log_error("NULL array passed into array_get");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
-        ccds_rwlock_runlock(a->buff_lock);
         return NULL; 
     }
     
     if(indx >= a->capacity) {
+        ccds_rwlock_runlock(a->buff_lock);
+        
         log_error("Array index %lu, exceeds array capacity %lu", indx, a->capacity);
         CCDS_SET_ERR(e, CCDS_EINDX_OB);
-        ccds_rwlock_runlock(a->buff_lock);
         return NULL;
     }
 
-    void * tmp = a->buffer[indx];
-   
+    void * tmp = a->buffer[indx];  
     ccds_rwlock_runlock(a->buff_lock);
+
     CCDS_SET_ERR(e, CCDS_EOK);
     return tmp;
 }
 
-bool array_getn(array * a, size_t indx, void ** buffer, size_t n, ccds_error * e) {
 
+bool array_getn(array * a, size_t indx, void ** buff, size_t n, ccds_error * e){
+    ccds_rwlock_rlock(a->buff_lock);
+    
+    if(a == NULL){
+        ccds_rwlock_runlock(a->buff_lock);
+        
+        log_error("NULL array passed into array_getn");
+        CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
+        return false;
+    }
+
+    if(indx + n > a->capacity){ 
+        ccds_rwlock_runlock(a->buff_lock);
+       
+        log_error("Copy boundry: %lu exceeds array capacity: %lu", indx + n, a->capacity);
+        CCDS_SET_ERR(e, CCDS_EINDX_OB);
+        return false;
+    }
+
+    for(size_t i = 0; i < n; i ++){
+        buff[i] = a->buffer[indx + i];
+    }
+    ccds_rwlock_runlock(a->buff_lock);
+    
+    CCDS_SET_ERR(e, CCDS_EOK);
+    return true;
 }
 
 void * array_set(array * a, size_t indx, void * data, ccds_error * e) {
     ccds_rwlock_wlock(a->buff_lock);
     
     if(a == NULL) {
+        ccds_rwlock_wunlock(a->buff_lock);
+        
         log_error("NULL array passed into array_set");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
-        ccds_rwlock_wunlock(a->buff_lock);
         return NULL; 
     }
 
     if(indx >= a->capacity) {
+        ccds_rwlock_wunlock(a->buff_lock);
+        
         log_error("Array index %lu, exceeds array capacity %lu", indx, a->capacity);
         CCDS_SET_ERR(e, CCDS_EINDX_OB);
-        ccds_rwlock_wunlock(a->buff_lock);
         return NULL;
     }
 
@@ -151,32 +180,65 @@ void * array_set(array * a, size_t indx, void * data, ccds_error * e) {
     return tmp;
 }
 
+bool array_setn(array * a, size_t indx, void ** buff, size_t n, ccds_error * e){ 
+    ccds_rwlock_wlock(a->buff_lock);
+    
+    if(a == NULL) {
+        ccds_rwlock_wunlock(a->buff_lock);
+        
+        log_error("NULL array passed into array_setn");
+        CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
+        return false; 
+    }
+
+    if(indx + n > a->capacity) {
+        ccds_rwlock_wunlock(a->buff_lock);
+        
+        log_error("writing boundry %lu, exceeds array capacity %lu", indx + n, a->capacity);
+        CCDS_SET_ERR(e, CCDS_EINDX_OB);
+        return false;
+    }
+
+    for(size_t i = 0; i < n; i ++) {
+        void * tmp = a->buffer[indx + i];
+        a->buffer[indx + i] = buff[i];
+        buff[i] = tmp;
+    }
+    
+    ccds_rwlock_wunlock(a->buff_lock);
+    CCDS_SET_ERR(e, CCDS_EOK);
+    return true;
+}
 
 
 bool array_resize(array * a, size_t cap, ccds_error * e) { 
     ccds_rwlock_wlock(a->buff_lock);
     
     if(a == NULL) { 
+        ccds_rwlock_wunlock(a->buff_lock);
+        
         log_error("NULL array passed into array_resize");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
-        ccds_rwlock_wunlock(a->buff_lock);
         return NULL; 
     }
     
+    // Array size not changed
     if(a->capacity == cap) {
-        // Array size not changed
         ccds_rwlock_wunlock(a->buff_lock);
+   
         return true;
-    }
+    } 
 
-    void ** tmp = memcfg_realloc(a->mem, a->buffer, cap);
+    void ** tmp = memcfg_realloc(a->mem, a->buffer, cap * sizeof(void *));
+
     if(tmp == NULL) {
+        ccds_rwlock_wunlock(a->buff_lock);
+        
         log_error("Failed to reallocate arrary from %lu to %lu elems", a->capacity, cap);
         CCDS_SET_ERR(e, CCDS_EMEM_FAIL);
-        ccds_rwlock_wunlock(a->buff_lock);
         return false;
     }
-
+    
     a->buffer = tmp;
     a->capacity = cap;
 
@@ -189,24 +251,24 @@ bool array_shiftr_fill(array * a, size_t indx, size_t off, void ** buff, size_t 
     ccds_rwlock_wlock(a->buff_lock);
     
     if(a == NULL) {
-        log_error("NULL array passed into array_shiftr");
         ccds_rwlock_wunlock(a->buff_lock);
+        
+        log_error("NULL array passed into array_shiftr");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return false;
     }
 
-    if(indx + off + len >= a->capacity) {
-        log_error("Write boundry: %lu exceeds or equals capacity: %lu", indx + off + len, a->capacity);
+    if(indx + off + len > a->capacity) {
         ccds_rwlock_wunlock(a->buff_lock);
+        
+        log_error("Write boundry: %lu exceeds capacity: %lu", indx + off + len, a->capacity);
         CCDS_SET_ERR(e, CCDS_EPRE_COND);
         return false;
     }
     
-    void * tmp[buff_len];
+    void * tmp[len];
     for(size_t i = 0; i < len; i++) {
-        if(indx + off + i >= indx + len){
-            tmp[i] = a->buffer[indx + off + i];
-        }
+        tmp[i] = a->buffer[indx + off + i];
     }
 
     /* Copy memory into new place */
@@ -216,7 +278,9 @@ bool array_shiftr_fill(array * a, size_t indx, size_t off, void ** buff, size_t 
         then tmp is emptied into buff so caller can access
         overwritten pointers */
     for(size_t i = 0; i < len; i ++) {
-        a->buffer[indx + i] = buff[i];
+        if(buff[i] != NULL) {
+            a->buffer[indx + i] = buff[i];
+        }
         buff[i] = tmp[i]; 
     }
 
@@ -225,32 +289,37 @@ bool array_shiftr_fill(array * a, size_t indx, size_t off, void ** buff, size_t 
     return true;
 }
 
-bool array_shiftl(array * a, size_t indx, size_t len, size_t off, void ** buff, size_t buff_len, ccds_error * e){
+bool array_shiftl_fill(array * a, size_t indx, size_t off, void ** buff, size_t len, ccds_error * e){
     ccds_rwlock_wlock(a->buff_lock); 
-    if(indx < off || indx >= a->capacity) {
-        log_error("Capacity: %lu, indx: %lu, off: %lu, buff_len: %lu", a->capacity, indx, off, buff_len);
+
+    if(a == NULL) {
         ccds_rwlock_wunlock(a->buff_lock);
+        
+        log_error("NULL array passed into array_shiftl");
+        CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return false;
     }
 
-    size_t num_copy = (indx - MIN(off, len)) + 1;
-    log_trace("capacity: %lu, indx: %lu, off: %lu, buff_len: %lu, num_copy:%lu",
-                a->capacity, indx, off, buff_len, num_copy);
+    if(off + len > indx){
+        ccds_rwlock_wunlock(a->buff_lock);
+        
+        log_error("Offset boundry: %lu exceeds index: %lu", off + len, indx);
+        CCDS_SET_ERR(e, CCDS_EPRE_COND);
+        return false;
+    }
 
-    void * tmp[buff_len];
-    for(size_t i = 0; i < off; i++){
-        if(i < buff_len){
-            tmp[i] = a->buffer[i];
-        }
+    void * tmp[len];
+    for(size_t i = 0; i < len; i++) {
+        tmp[i] = a->buffer[indx - (off + i)];
     }
     
-    memcpy(&(a->buffer[a->capacity - len - indx - off]), &(a->buffer[off]), num_copy * sizeof(void *));
+    memcpy(&(a->buffer[indx - off - len]), &(a->buffer[indx - len]), len * sizeof(void *));
     
-    for(size_t i = 0; i < off; i ++) {
-        if(i < buff_len) {
+    for(size_t i = 0; i < len; i ++) {
+        if(buff[i] != NULL) {
             a->buffer[indx - i] = buff[i];
-            buff[i] = tmp[i];
         }
+        buff[i] = tmp[i];
     }
 
     ccds_rwlock_wunlock(a->buff_lock);
@@ -261,10 +330,19 @@ bool array_shiftl(array * a, size_t indx, size_t len, size_t off, void ** buff, 
 bool array_swap(array * a, size_t indx1, size_t indx2, ccds_error * e){ 
     ccds_rwlock_wlock(a->buff_lock);
     
+    if(a == NULL){
+        ccds_rwlock_wulock(a->buff_lock);
+        
+        log_error("NULL array passed into array_swap");
+        CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
+        return;
+    }
+    
     if(indx1 >= a->capacity || indx2 >= a->capacity){
+        ccds_rwlock_wunlock(a->buff_lock);
+        
         log_error("Failed to swap indexs %lu %lu, one or both exceed %lu", indx1, indx2, a->capacity);
         CCDS_SET_ERR(e, CCDS_EINDX_OB);
-        ccds_rwlock_wunlock(a->buff_lock);
         return false;
     }
 
@@ -276,4 +354,41 @@ bool array_swap(array * a, size_t indx1, size_t indx2, ccds_error * e){
 
     CCDS_SET_ERR(e, CCDS_EOK);
     return true;
+}
+
+void array_foreach(array * a, void (*fn)(void **)){
+    ccds_rwlock_wlock(a->buff_lock);
+    if(a == NULL){
+        ccds_rwlock_wulock(a->buff_lock);
+        
+        log_error("NULL array passed into array_foreach");
+        CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
+        return;
+    }
+
+    for(size_t i = 0; i < a->capacity; i++){
+        fn(&(a->buffer[i]));
+    }
+
+    ccds_rwlock_wunlock(a->buff_lock);
+    CCDS_SET_ERR(e, CCDS_EOK);
+}
+
+void array_foreachi(array * a, void (*fn)(void **, size_t)){
+    ccds_rwlock_wlock(a->buff_lock);
+
+    if(a == NULL){
+        ccds_rwlock_wulock(a->buff_lock);
+        
+        log_error("NULL array passed into array_foreachi");
+        CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
+        return;
+    }
+
+    for(size_t i = 0; i < a->capacity; i++){
+        fn(&(a->buffer[i]), i);
+    }
+
+    ccds_rwlock_wunlock(a->buff_lock);
+    CCDS_SET_ERR(e, CCDS_EOK);
 }

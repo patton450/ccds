@@ -55,28 +55,37 @@ size_t list_length(list * l, ccds_error * e){
 /* Adding elements */
 bool list_add(list * l, size_t indx, void * data, ccds_error * e){
     if(l == NULL){
+        log_error("NULL list passed into list_add");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return false;
     }
 
     if(indx > l->length) {
+        log_error("Index %lu exceeds list bounds %lu", indx, l->length);
         CCDS_SET_ERR(e, CCDS_EINDX_OB);
         return false;
     }
 
     ccds_mtx_lock(l->expand);
     if(l->length == l->buffer->capacity) {
-        if(!array_resize(l->buffer, l->length * 2, e)){
-            CCDS_SET_ERR(e, CCDS_EMEM_FAIL);
+        log_trace("Expanding the buffer from %lu to %lu", l->length, l->length * 2);
+        if(!array_resize(l->buffer, l->length * 2, e)) {
+            ccds_mtx_unlock(l->expand);
+            return false;
         }
     }
-    ccds_mtx_unlock(l->expand);  
-    void * tmp[1] = { data };
+    
+    size_t len = l->length++;
+    ccds_mtx_unlock(l->expand);
 
-    size_t num = (l->length - indx) == 0 ? 1 : l->length - indx;
-    l->length++;
+    size_t num = MAX(1, len - indx);
+    size_t off = len != indx ? 1 : 0;
 
-    return array_shiftr(l->buffer, indx, num, 1, tmp, 1, e); 
+    void * tmp[num];
+    memset(tmp, 0, num);
+    tmp[0] = data;
+
+    return array_shiftr_fill(l->buffer, indx, off, tmp, num, e); 
 }
 
 bool list_add_head(list * l, void * data, ccds_error * e){
@@ -136,10 +145,14 @@ void * list_remove(list * l, size_t indx, ccds_error * e){
         return NULL;
     }
     
-    void * tmp[1] = { NULL };
-    size_t num = (l->length - indx) == 0 ? 1 : l->length - indx;
-    array_shiftl(l->buffer, indx, num, 1, tmp, 1, e);
-    l->length --;
+    size_t len = l->length --;
+    size_t num = MAX(1, len - indx);
+    size_t off = 1; 
+
+    void * tmp[num];
+    memset(tmp, 0, num);
+
+    array_shiftl_fill(l->buffer, len - indx, off, tmp, num, e);
 
     return tmp[0];
 }
@@ -154,7 +167,7 @@ void * list_remove_tail(list * l, ccds_error * e) {
         return NULL;
     }
     
-    return list_remove(l, l->length, e);
+    return list_remove(l, l->length - 1, e);
 }
 
 bool list_swap(list * l, size_t indx1, size_t indx2, ccds_error * e){
