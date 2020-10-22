@@ -122,11 +122,13 @@ bool    array_getn(array * a, size_t indx, void ** buffer, size_t n, ccds_error 
 NAME:
     array_set
 DESCRIPTION:
-    Writes the specified element at indx in the array
+    Writes the specified element at indx in the array, returns what the 
+        void * at indx was before writing.
 PARAMETERS:
     e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
         Otherwise e is NULL, and no errors will be set 
 RETURNS:
+    void *: the void pointer that used to occupy indx
 ERRORS:
     CCDS_EOK: The function completed without error
 */
@@ -145,7 +147,7 @@ PARAMETERS:
     e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
         Otherwise e is NULL, and no errors will be set 
 RETURNS:
-    true:   if the fucntion completes without error
+    true:   if the function completes without error
     false:  otherwise
 ERRORS:
     CCDS_EOK: The function completed without error
@@ -218,6 +220,40 @@ bool    array_swap(array * a, size_t indx1, size_t indx2, ccds_error * e);
 
 /* 
 NAME:
+    array_foreach
+DESCRIPTION:
+    Loops over every element passing a pointer to the current elem to fn for user
+        interaction. NOTE: if you need to manipulate the array dont use the 
+        array methods as this funciton holds a write lock on a->buffer.
+PARAMETERS:
+    a:  Pointer to the array we are looping over
+    fn: Pointer to caller's function that will be given pointers to the elements
+    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
+        Otherwise e is NULL, and no errors will be set 
+ERRORS:
+    CCDS_EOK: The function completed without error
+*/
+void    array_foreach(array * a, void (*fn)(void **), ccds_error * e);
+
+/* 
+NAME:
+    array_foreachi
+DESCRIPTION:
+    Loops over every element passing a pointer to the current element, 
+        and index to fn for user interaction. NOTE: if you need to manipulate 
+        the array dont use the array methods as this funciton holds a write lock on a->buffer.
+PARAMETERS:
+    a:  Pointer to the array we are looping over
+    fn: Pointer to caller's function that will be given pointers to the elements
+    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
+        Otherwise e is NULL, and no errors will be set 
+ERRORS:
+    CCDS_EOK: The function completed without error
+*/
+void    array_foreachi(array * a, void (*fn)(void **, size_t), ccds_error * e);
+
+/* 
+NAME:
     array_check_set
 DESCRIPTION:
     Checks the given poision against val1 if cmp returns true then sets 
@@ -233,8 +269,4 @@ ERRORS:
     CCDS_EOK: The function completed without error
 */
 bool    array_check_set(array * a, size_t indx, bool (*cmp) (void *,void *), void * val1, void * val2, ccds_error * e);
-
-void    array_foreach(array * a, void (*fn)(void **));
-
-void    array_foreachi(array * a, void (*fn)(void **, size_t));
 #endif

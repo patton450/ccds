@@ -331,11 +331,11 @@ bool array_swap(array * a, size_t indx1, size_t indx2, ccds_error * e){
     ccds_rwlock_wlock(a->buff_lock);
     
     if(a == NULL){
-        ccds_rwlock_wulock(a->buff_lock);
+        ccds_rwlock_wunlock(a->buff_lock);
         
         log_error("NULL array passed into array_swap");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
-        return;
+        return false;
     }
     
     if(indx1 >= a->capacity || indx2 >= a->capacity){
@@ -356,10 +356,10 @@ bool array_swap(array * a, size_t indx1, size_t indx2, ccds_error * e){
     return true;
 }
 
-void array_foreach(array * a, void (*fn)(void **)){
+void array_foreach(array * a, void (*fn)(void **), ccds_error * e){
     ccds_rwlock_wlock(a->buff_lock);
     if(a == NULL){
-        ccds_rwlock_wulock(a->buff_lock);
+        ccds_rwlock_wunlock(a->buff_lock);
         
         log_error("NULL array passed into array_foreach");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
@@ -374,11 +374,11 @@ void array_foreach(array * a, void (*fn)(void **)){
     CCDS_SET_ERR(e, CCDS_EOK);
 }
 
-void array_foreachi(array * a, void (*fn)(void **, size_t)){
+void array_foreachi(array * a, void (*fn)(void **, size_t), ccds_error * e){
     ccds_rwlock_wlock(a->buff_lock);
 
     if(a == NULL){
-        ccds_rwlock_wulock(a->buff_lock);
+        ccds_rwlock_wunlock(a->buff_lock);
         
         log_error("NULL array passed into array_foreachi");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
