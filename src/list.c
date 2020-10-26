@@ -75,18 +75,17 @@ bool list_add(list * l, size_t indx, void * data, ccds_error * e){
             return false;
         }
     }
-    
-    size_t len = l->length++;
     ccds_mtx_unlock(l->expand);
 
-    size_t num = MAX(1, len - indx);
-    size_t off = len != indx ? 1 : 0;
+    l->length++;
+    if(indx == l->buffer->capacity - 1){
+        array_set(l->buffer, l->buffer->capacity - 1, data, NULL);
+        return true;
+    }
 
-    void * tmp[num];
-    memset(tmp, 0, num);
+    void * tmp[1] = { 0 };
     tmp[0] = data;
-
-    return array_shiftr_fill(l->buffer, indx, off, tmp, num, e); 
+    return array_insert_shift(l->buffer, indx, 1, tmp, e); 
 }
 
 bool list_add_head(list * l, void * data, ccds_error * e){
@@ -155,15 +154,15 @@ void * list_remove(list * l, size_t indx, ccds_error * e){
         return NULL;
     }
     
-    size_t len = l->length --;
-    size_t num = MAX(1, len - indx);
-    size_t off = 1; 
+    l->length--;
 
-    void * tmp[num];
-    memset(tmp, 0, num);
-
-    array_shiftl_fill(l->buffer, len - indx, off, tmp, num, e);
-
+    if(indx == l->buffer->capacity - 1) {
+        log_trace("Yee");
+        return array_set(l->buffer, l->buffer->capacity - 1, NULL, NULL);
+    }
+    
+    void * tmp[1] = { NULL };
+    array_remove_shift(l->buffer, indx, 1, tmp, e);
     return tmp[0];
 }
 
@@ -320,7 +319,6 @@ bool list_any(list * l, bool (*fn) (void *), ccds_error * e){
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return false;
     }
-
 
     bool any = false;
     ccds_rwlock_rlock(l->buffer->buff_lock);

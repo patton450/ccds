@@ -185,23 +185,9 @@ RETURNS:
 ERRORS:
     CCDS_EOK: The function completed without error
 */
-bool    array_shiftr_fill(array * a, size_t indx, size_t off, void ** buff, size_t len, ccds_error * e);
 
-/* 
-NAME:
-DESCRIPTION:
-PARAMETERS:
-    a: 
-    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
-        Otherwise e is NULL, and no errors will be set 
-RETURNS:
-    true:   if the fucntion completes without error
-    false:  otherwise
-ERRORS:
-    CCDS_EOK: The function completed without error
-*/
-
-bool    array_shiftl_fill(array * a, size_t indx, size_t off, void ** buff, size_t len, ccds_error * e);
+bool    array_insert_shift(array * a, size_t indx, size_t n, void ** buff, ccds_error * e);
+bool    array_remove_shift(array * a, size_t indx, size_t n, void ** buff, ccds_error * e);
 
 /* 
 NAME:
