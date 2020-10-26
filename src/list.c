@@ -1,4 +1,5 @@
 #include "list.h"
+
 list * list_new(size_t cap, memcfg * mem, ccds_error * e) {
     list * l = memcfg_malloc(mem, sizeof(list));
     if(l == NULL) {
