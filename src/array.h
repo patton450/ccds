@@ -123,7 +123,7 @@ RETURNS:
     false: otherwise
 ERRORS:
     CCDS_EINDX_OB: indx + n > a->capcity
-    CCDS_EINVLF_PARAM: a is NULL, or buffer is NULL
+    CCDS_EINVLD_PARAM: a is NULL, or buffer is NULL
     CCDS_EOK: The function completed without error
 */
 bool    array_getn(array * a, size_t indx, void ** buffer, size_t n, ccds_error * e);
@@ -146,7 +146,7 @@ RETURNS:
     void *: the void pointer that used to occupy indx
 ERRORS:
     CCDS_EINDX_OB: indx >= a->capcity
-    CCDS_EINVLF_PARAM: a is NULL
+    CCDS_EINVLD_PARAM: a is NULL
     CCDS_EOK: The function completed without error
 */
 void *  array_set(array * a, size_t indx, void * p, ccds_error * e);

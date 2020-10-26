@@ -66,7 +66,6 @@ bool list_add(list * l, size_t indx, void * data, ccds_error * e){
         CCDS_SET_ERR(e, CCDS_EINDX_OB);
         return false;
     }
-
     ccds_mtx_lock(l->expand);
     if(l->length == l->buffer->capacity) {
         log_trace("Expanding the buffer from %lu to %lu", l->length, l->length * 2);
@@ -78,11 +77,7 @@ bool list_add(list * l, size_t indx, void * data, ccds_error * e){
     ccds_mtx_unlock(l->expand);
 
     l->length++;
-    if(indx == l->buffer->capacity - 1){
-        array_set(l->buffer, l->buffer->capacity - 1, data, NULL);
-        return true;
-    }
-
+    
     void * tmp[1] = { 0 };
     tmp[0] = data;
     return array_insert_shift(l->buffer, indx, tmp, 1, e); 
@@ -155,12 +150,6 @@ void * list_remove(list * l, size_t indx, ccds_error * e){
     }
     
     l->length--;
-
-    if(indx == l->buffer->capacity - 1) {
-        log_trace("Yee");
-        return array_set(l->buffer, l->buffer->capacity - 1, NULL, NULL);
-    }
-    
     void * tmp[1] = { NULL };
     array_remove_shift(l->buffer, indx, tmp, 1, e);
     return tmp[0];
