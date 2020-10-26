@@ -34,6 +34,15 @@ int mawin(){
     return 0;
 }
 
+void print_int_ptr(void ** ptr){
+    if(ptr == NULL) { return; }
+    if(*ptr == NULL) { return; }
+    int * x = (int *)(*ptr);
+    printf("%p => %d \n", x, *x);
+    free(x);
+    *ptr = NULL;
+};
+
 int main(){
     int cap = 100;
     list * l = list_new(cap, NULL, NULL);
@@ -50,11 +59,12 @@ int main(){
 
     printf("\n");
     log_info("Done loading\n");
-    
-    for(int i = 0; i < cap; i++){
-        void * ptr = list_get(l, i, NULL);
-        log_info("%p = a->buffer[%d] := %d", ptr, i, *((int *)ptr));
-    }
+   
+    list_foreach(l, &print_int_ptr, NULL);
+//    for(int i = 0; i < cap; i++){
+//        void * ptr = list_get(l, i, NULL);
+//        log_info("%p = a->buffer[%d] := %d", ptr, i, *((int *)ptr));
+//    }
 
 
     printf("\n");
@@ -62,7 +72,12 @@ int main(){
 
     for(int i = 0; i < cap -1; i++) {
         void * ptr = list_remove(l, 1, NULL);
-        log_info("%p = a->buffer[%d] := %d", ptr, 1, *((int *)ptr));
+        size_t indx = 1;
+        if(ptr != NULL) {
+            log_info("%p = a->buffer[%d] := %d", ptr, indx, *((int *)ptr));
+        } else {
+            log_info("NULL = a->buffer[%d]", indx);
+        }
         free(ptr);
     }
     

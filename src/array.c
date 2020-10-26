@@ -1,4 +1,5 @@
 #include "array.h"
+
 array * array_new(size_t cap, memcfg * m, ccds_error * e) {  
     /* Allocate pointers needed for the array, set errors if we encounter any */
     array * a = memcfg_malloc(m, sizeof(array));
@@ -129,10 +130,10 @@ void * array_get(array * a, size_t indx, ccds_error * e){
 bool array_getn(array * a, size_t indx, void ** buff, size_t n, ccds_error * e){
     ccds_rwlock_rlock(a->buff_lock);
     
-    if(a == NULL){
+    if(a == NULL || buff == NULL) {
         ccds_rwlock_runlock(a->buff_lock);
         
-        log_error("NULL array passed into array_getn");
+        log_error("NULL %s passed into array_getn", (a == NULL ? "array" : "buffer"));
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return false;
     }
@@ -226,7 +227,7 @@ bool array_resize(array * a, size_t cap, ccds_error * e) {
     // Array size not changed
     if(a->capacity == cap) {
         ccds_rwlock_wunlock(a->buff_lock);
-   
+        CCDS_SET_ERR(e, CCDS_EOK);
         return true;
     } 
 
@@ -249,7 +250,7 @@ bool array_resize(array * a, size_t cap, ccds_error * e) {
 }
 
 
-bool array_insert_shift( array * a, size_t indx, size_t n, void ** buff, ccds_error * e){ 
+bool array_insert_shift( array * a, size_t indx, void ** buff, size_t n, ccds_error * e){ 
     ccds_rwlock_wlock(a->buff_lock);
     if(a == NULL) {
         ccds_rwlock_wunlock(a->buff_lock);
@@ -258,11 +259,19 @@ bool array_insert_shift( array * a, size_t indx, size_t n, void ** buff, ccds_er
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return false;
     }
-
-    if(indx + 2 * n > a->capacity || indx >= a->capacity - 1) {
+    
+    if(indx >= a->capacity - 1){ 
         ccds_rwlock_wunlock(a->buff_lock);
         
-        log_error("Write boundry: %lu exceeds capacity: %lu", indx + 2 * n, a->capacity);
+        log_error("Index: %lu equals or exceeds shift capacity: %lu", indx, a->capacity - 1);
+        CCDS_SET_ERR(e, CCDS_EINDX_OB);
+        return false;
+    }
+
+    if(indx + n > a->capacity) {
+        ccds_rwlock_wunlock(a->buff_lock);
+        
+        log_error("Write boundry: %lu exceeds capacity: %lu", indx +  n, a->capacity);
         CCDS_SET_ERR(e, CCDS_EPRE_COND);
         return false;
     }
@@ -270,7 +279,7 @@ bool array_insert_shift( array * a, size_t indx, size_t n, void ** buff, ccds_er
 
     void * tmp[n];
     for(size_t i = 0; i < n; i++){
-        tmp[n - 1 - i] = a->buffer[(a->capacity - 1 - i )];
+        tmp[i] = a->buffer[(a->capacity - n - i)];
     }
 
     memmove(&a->buffer[indx + n], &a->buffer[indx], (a->capacity - n - indx) * sizeof(void *));
@@ -280,8 +289,8 @@ bool array_insert_shift( array * a, size_t indx, size_t n, void ** buff, ccds_er
             a->buffer[indx + i] = NULL;
         } else {
             a->buffer[indx + i] = buff[i];
+            buff[i] = tmp[i];
         }
-        buff[i] = tmp[i];
     }
     
     ccds_rwlock_wunlock(a->buff_lock);
@@ -289,13 +298,21 @@ bool array_insert_shift( array * a, size_t indx, size_t n, void ** buff, ccds_er
     return true;
 }
 
-bool array_remove_shift(array * a, size_t indx, size_t n, void ** buff, ccds_error * e){
+bool array_remove_shift(array * a, size_t indx, void ** buff, size_t n, ccds_error * e){
     ccds_rwlock_wlock(a->buff_lock);
     if(a == NULL) {
         ccds_rwlock_wunlock(a->buff_lock);
         
         log_error("NULL array passed into array_shiftr_fill");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
+        return false;
+    }
+
+    if(indx > a->capacity){ 
+        ccds_rwlock_wunlock(a->buff_lock);
+        
+        log_error("Index: %lu exceeds capacity: %lu", indx, a->capacity);
+        CCDS_SET_ERR(e, CCDS_EINDX_OB);
         return false;
     }
 

@@ -11,18 +11,20 @@
 #include "log.h"
 
 #if __STDC_NO_ATOMICS__ 
-    //idk
+    /* If there are no atomics then the implementation should
+        handle a similar object since c11 right? */
 #else
 #endif
 
-//struct for thread safe access
+/*struct for thread safe access */
 struct _array {
-    atomic_size_t   capacity;   // atomic size_t so no race conditions
-    void **         buffer;     // Have to use RWLock to keep in sync
-    memcfg *        mem;        // User defined memory mangement
-    ccds_rwlock*    buff_lock;  // Reader-Writer lock for the buffer;
+    atomic_size_t   capacity;   /* atomic size_t so no race conditions  */
+    void **         buffer;     /* Have to use RWLock to keep in sync   */
+    memcfg *        mem;        /* User defined memory mangement        */
+    ccds_rwlock*    buff_lock;  /* Reader-Writer lock for the buffer;   */
 };
 typedef struct _array array;
+
 
 /* 
 NAME:
@@ -34,10 +36,10 @@ DESCRIPTION:
         the memory defaults are used ccds_d*alloc (see mem.h). Capacity is the inital 
         capacity of the array note this funciton allocates (cap * sizeof(void *)) bytes.
 PARAMETERS:
-    cap: Inital capacity to set the array to
-    mem: Either a pointer to a memcfg, or NULL if defaults are to be used
-    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
-        Otherwise e is NULL, and no errors will be set 
+    cap:    Inital capacity to set the array to
+    mem:    Either a pointer to a memcfg, or NULL if defaults are to be used
+    e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
+                Otherwise e is NULL, and no errors will be set.
 RETURNS:
     array *: If we succesfully allocate everything needed for the array
     NULL: If the funciton encounters an error
@@ -47,19 +49,23 @@ ERRORS:
 */
 array * array_new(size_t cap, memcfg * mem, ccds_error * e);
 
+
 /* 
 NAME:
     array_free
 DESCRIPTION:
     Frees memory allocated to a struct _array by the funciton array_new.
 PARAMETERS:
-    a: Pointer to an array to be freed 
-    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
-        Otherwise e is NULL, and no errors will be set 
+    a:      Pointer to an array to be freed 
+    e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
+                Otherwise e is NULL, and no errors will be set.
 ERRORS:
+    CCDS_EINVLD_PARAM: If a == NULL, or ccds_rwlock_buffer returns INVLD
+    CCDS_EBUSY: If ccds_rwlock_buffer returns EBUSY
     CCDS_EOK: The function completed without error
 */
 void    array_free(array * a, ccds_error * e);
+
 
 /* 
 NAME:
@@ -67,9 +73,9 @@ NAME:
 DESCRIPTION:
     Returns the capacity of the array, to be consistent accross all data structures
 PARAMETERS:
-    a:  Pointer to the array we are getting the capacity of 
-    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
-        Otherwise e is NULL, and no errors will be set 
+    a:      Pointer to the array we are getting the capacity of 
+    e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
+                Otherwise e is NULL, and no errors will be set.
 RETURNS:
     size_t: a->capacity
 ERRORS:
@@ -78,16 +84,17 @@ ERRORS:
 */
 size_t  array_length(array * a, ccds_error * e);
 
+
 /* 
 NAME:
     array_get
 DESCRIPTION:
     Gets the element occupying indx
 PARAMETERS:
-    a: Array we are trying to access
-    indx: Index we want to check
-    e: Pointer to an error enum, if e != NULL then error is set accordingly. 
-            Otherwise e is NULL, and no errors will be set 
+    a:      Array we are trying to access
+    indx:   Index we want to check
+    e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
+                Otherwise e is NULL, and no errors will be set 
 RETURNS:
     void *: The current value of the array at indx
 ERRORS:
@@ -97,62 +104,78 @@ ERRORS:
 */
 void *  array_get(array * a, size_t indx, ccds_error * e);
 
+
 /* 
 NAME:
     array_getn
 DESCRIPTION:
-    Copies from the specified indx to indx + n. Assumes buffer has space
-        for n void *'s and fills buffer with whats in the array.
+    Copies from [a->buffer[indx], a->buffer[indx + n]] into buffer. Assumes buffer has a minimum
+        of n * sizeof(void *) bytes allocated to it.
 PARAMETERS:
-    a:  Pointer to the array we are reading from
+    a:      Pointer to the array we are reading from
     indx:   Starting index to copy from
     buffer: Array that the results will be written into
-    n:  Number of elements we are copying and size of buffer
-    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
-        Otherwise e is NULL, and no errors will be set 
+    n:      Number of elements we are copying and size of buffer
+    e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
+                Otherwise e is NULL, and no errors will be set. 
 RETURNS:
     true: If the function completes without error
     false: otherwise
 ERRORS:
+    CCDS_EINDX_OB: indx + n > a->capcity
+    CCDS_EINVLF_PARAM: a is NULL, or buffer is NULL
     CCDS_EOK: The function completed without error
 */
 bool    array_getn(array * a, size_t indx, void ** buffer, size_t n, ccds_error * e);
+
 
 /* 
 NAME:
     array_set
 DESCRIPTION:
     Writes the specified element at indx in the array, returns what the 
-        void * at indx was before writing.
+        void * at indx was before writing, or NULL if the function completes 
+        with error.
 PARAMETERS:
-    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
-        Otherwise e is NULL, and no errors will be set 
+    a:      Pointer to the array we are writing to
+    indx:   Index of a->buffer we are writing data into
+    p:      Data that will occupy a->buffer[indx] after the funciton completes
+    e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
+                Otherwise e is NULL, and no errors will be set
 RETURNS:
     void *: the void pointer that used to occupy indx
 ERRORS:
+    CCDS_EINDX_OB: indx >= a->capcity
+    CCDS_EINVLF_PARAM: a is NULL
     CCDS_EOK: The function completed without error
 */
 void *  array_set(array * a, size_t indx, void * p, ccds_error * e);
+
 
 /* 
 NAME:
     array_setn
 DESCRIPTION:
-    Writes the number of elements specified from buffer into array starting at indx
+    Copies from buffer into [a->buffer[indx], a->buffer[indx + n]]. Assumes buffer has a minimum
+        of n * sizeof(void *) bytes allocated to it. After the funcion call is complete buffer will 
+        contain the elements that used to occupy [a->buffer[indx], a->buffer[indx + n - 1]].
 PARAMETERS:
-    a:  Pointer to the array we are  writing to
+    a:      Pointer to the array we are  writing to
     indx:   Starting index 
     buffer: Array that holds elems we are writing into the array
-    n:  Number of elements we are writing
-    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
-        Otherwise e is NULL, and no errors will be set 
+    n:      Number of elements we are writing
+    e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
+                Otherwise e is NULL, and no errors will be set.
 RETURNS:
     true:   if the function completes without error
     false:  otherwise
 ERRORS:
+    CCDS_EINDX_OB: indx + n > a->capcity
+    CCDS_EINVLD_PARAM: a is NULL or buffer is NULL
     CCDS_EOK: The function completed without error
 */
-bool    array_setn(array * a, size_t indx, void ** buff, size_t n, ccds_error * e);
+bool    array_setn(array * a, size_t indx, void ** buffer, size_t n, ccds_error * e);
+
 
 /* 
 NAME:
@@ -168,41 +191,113 @@ RETURNS:
     true:   if the fucntion completes without error
     false:  otherwise
 ERRORS:
+    CCDS_EINVLD_PARAM: a is NULL
+    CCDS_EMEM_FAIL: If memcfg_realloc returns NULL
     CCDS_EOK: The function completed without error
 */
 bool    array_resize(array * a, size_t size, ccds_error * e);
 
+
 /* 
 NAME:
+    array_insert_shift
 DESCRIPTION:
+    Copies from buffer into [a->buffer[indx], a->buffer[indx + n - 1]]. Elements from 
+        [a->buffer[indx + n], a->buffer[a->capacity - n]] will be shifted by n places to the left.
+        Buffer is wrriten into [a->buffer[capacity - n], a->buffer[capacity - 1]]. After the funciton call
+        the elements that previously occupied [a->buffer[a->capacity - n], a->buffer[a->capacity - 1]] 
+        will occupy buffer.
 PARAMETERS:
-    a: 
-    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
-        Otherwise e is NULL, and no errors will be set 
+    a:      Array we are inserting into
+    indx:   Index we will insert at
+    buffer: Array of void pointers that will be written into array, if NULL, will write NULL values for all n
+    n:      The number of elements we are writing, and the minimum size of buffer
+    e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
+                Otherwise e is NULL, and no errors will be set 
 RETURNS:
     true:   if the fucntion completes without error
     false:  otherwise
 ERRORS:
+    CCDS_EINDV_PARAM: If a == NULL
+    CCDS_EINDX_OB: If indx >= a->capacity - 1
+    CCDS_EPRE_COND: If (indx + 2*n) > a->capacity
     CCDS_EOK: The function completed without error
 */
 
-bool    array_insert_shift(array * a, size_t indx, size_t n, void ** buff, ccds_error * e);
-bool    array_remove_shift(array * a, size_t indx, size_t n, void ** buff, ccds_error * e);
+bool    array_insert_shift(array * a, size_t indx, void ** buffer, size_t n, ccds_error * e);
+
 
 /* 
 NAME:
+    array_remove_shift
 DESCRIPTION:
+    Removes [a->buffer[indx], a->buffer[indx + n]]. Elements [a->buffer[indx + n], a->buffer[a->capacity - 1]]
+        will be be shifted by n places to the left. The elemnts that occupy buffer will be written to
+        [a->buffer[a->capacity - n], a->buffer[a->capacity]]. After the funciton call is complete
+        buffer will contain the elements that previously occupied [a->buffer[indx], a->buffer[indx + n]]
 PARAMETERS:
-    a: 
-    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
-        Otherwise e is NULL, and no errors will be set 
+    a:      Array we are inserting into
+    indx:   Index we will insert at
+    buffer: Array of void pointers that will be written into array, if NULL, will write NULL values for all n
+    n:      The number of elements we are writing, and the minimum size of buffer
+    e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
+                Otherwise e is NULL, and no errors will be set 
 RETURNS:
     true:   if the fucntion completes without error
     false:  otherwise
 ERRORS:
+    CCDS_EINDV_PARAM: If a == NULL
+    CCDS_EINDX_OB: If indx >= a->capacity - 1
+    CCDS_EPRE_COND: If (indx + n) > a->capacity
+    CCDS_EOK: The function completed without error
+*/
+bool    array_remove_shift(array * a, size_t indx, void ** buffer, size_t n, ccds_error * e);
+
+
+/* 
+NAME:
+    array_swap
+DESCRIPTION:
+    Swaps elements at the two indices
+PARAMETERS:
+    a:      Array funciton operates on
+    indx1:  First index
+    index2: Second index
+    e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
+                Otherwise e is NULL, and no errors will be set 
+RETURNS:
+    true:   if the fucntion completes without error
+    false:  otherwise
+ERRORS:
+    CCDS_EINDV_PARAM: If a == NULL
+    CCDS_EINDX_OB: If indx1 > a->capacity or indx2 > a->capacity
     CCDS_EOK: The function completed without error
 */
 bool    array_swap(array * a, size_t indx1, size_t indx2, ccds_error * e);
+
+
+/*
+NAME:
+    array_swap_if
+DESCRIPTION:
+    Swaps elements at the two indices, if the comparison funciton returns true
+PARAMETERS:
+    a:      Array funciton operates on
+    indx1:  First index
+    index2: Second index
+    cmp:    Comparison funciton that compares the elements at indx1 and indx2
+    e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
+                Otherwise e is NULL, and no errors will be set 
+RETURNS:
+    true:   if the fucntion completes without error
+    false:  otherwise
+ERRORS:
+    CCDS_EINDV_PARAM: If a == NULL
+    CCDS_EINDX_OB: If indx1 > a->capacity or indx2 > a->capacity
+    CCDS_EOK: The function completed without error
+*/
+bool    array_swap_if(array * a, size_t indx1, size_t indx2, bool (*cmp) (void *, void *), ccds_error * e);
+
 
 /* 
 NAME:
@@ -217,9 +312,11 @@ PARAMETERS:
     e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
         Otherwise e is NULL, and no errors will be set 
 ERRORS:
+    CCDS_EINVLD_PARAM:  a == NULL
     CCDS_EOK: The function completed without error
 */
 void    array_foreach(array * a, void (*fn)(void **), ccds_error * e);
+
 
 /* 
 NAME:
@@ -234,25 +331,9 @@ PARAMETERS:
     e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
         Otherwise e is NULL, and no errors will be set 
 ERRORS:
+    CCDS_EINVLD_PARAM:  a == NULL
     CCDS_EOK: The function completed without error
 */
 void    array_foreachi(array * a, void (*fn)(void **, size_t), ccds_error * e);
 
-/* 
-NAME:
-    array_check_set
-DESCRIPTION:
-    Checks the given poision against val1 if cmp returns true then sets 
-        a->buffer[i] to val2
-PARAMETERS:
-    a: 
-    e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
-        Otherwise e is NULL, and no errors will be set 
-RETURNS:
-    true:   if the fucntion completes without error
-    false:  otherwise
-ERRORS:
-    CCDS_EOK: The function completed without error
-*/
-bool    array_check_set(array * a, size_t indx, bool (*cmp) (void *,void *), void * val1, void * val2, ccds_error * e);
 #endif

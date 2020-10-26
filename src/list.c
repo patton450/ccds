@@ -85,7 +85,7 @@ bool list_add(list * l, size_t indx, void * data, ccds_error * e){
 
     void * tmp[1] = { 0 };
     tmp[0] = data;
-    return array_insert_shift(l->buffer, indx, 1, tmp, e); 
+    return array_insert_shift(l->buffer, indx, tmp, 1, e); 
 }
 
 bool list_add_head(list * l, void * data, ccds_error * e){
@@ -162,7 +162,7 @@ void * list_remove(list * l, size_t indx, ccds_error * e){
     }
     
     void * tmp[1] = { NULL };
-    array_remove_shift(l->buffer, indx, 1, tmp, e);
+    array_remove_shift(l->buffer, indx, tmp, 1, e);
     return tmp[0];
 }
 
