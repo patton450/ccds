@@ -163,7 +163,7 @@ RETURNS:
 ERRORS:
     CCDS_EOK: The funciton completed without error
 */
-void *  list_foldl(list * l, void * start, void * (*fn) (void *, const void *), ccds_error * e);
+void *  list_foldl(list * l, void * start, void (*fn) (void *, void *), ccds_error * e);
 
 
 /* 
@@ -179,9 +179,9 @@ RETURNS:
 ERRORS:
     CCDS_EOK: The funciton completed without error
 */
-void *  list_foldr(list * l, void * start, void * (*fn) (const void *, void *), ccds_error * e);
+void *  list_foldr(list * l, void * start, void (*fn) (void *, void *), ccds_error * e);
 
-void    list_map (list * l, void ** buff, size_t buff_len, void * (*fn) (void *), ccds_error * e);
+void    list_map (list * l, void ** buff, size_t buff_len, void (*fn) (void **, void **), ccds_error * e);
 void    list_filter(list * l, void ** buff, size_t buff_len, bool (*fn) (void *), ccds_error * e);
 
 bool    list_any(list * l, bool (*fn) (void *), ccds_error * e);

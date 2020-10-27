@@ -4,19 +4,18 @@
 #include "../src/array.h"
 #include "../src/list.h"
 
-void print_int_ptr(void ** ptr){
+void print_int_ptr(void ** ptr, size_t indx){
     if(ptr == NULL) { return; }
     if(*ptr == NULL) { return; }
     int * x = (int *)(*ptr);
-    printf("%p => %d \n", x, *x);
-//    free(x);
-//    *ptr = NULL;
+    log_info("%p => a->buffer[%lu] = %d", x, indx, *x);
 };
 
 int main(){
     int cap = 100;
     list * l = list_new(cap, NULL, NULL);
 
+    cap *= 4;
     for(int i = 0; i < cap; i++){
         int * x = malloc(sizeof(int));
         *x = i;
@@ -30,11 +29,7 @@ int main(){
     printf("\n");
     log_info("Done loading\n");
    
-    list_foreach(l, &print_int_ptr, NULL);
-//    for(int i = 0; i < cap; i++){
-//        void * ptr = list_get(l, i, NULL);
-//        log_info("%p = a->buffer[%d] := %d", ptr, i, *((int *)ptr));
-//    }
+    list_foreachi(l, &print_int_ptr, NULL);
 
 
     printf("\n");
