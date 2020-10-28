@@ -14,7 +14,7 @@ struct _list {
     atomic_size_t   length;
     array *         buffer;
     memcfg *        mem;
-    ccds_mtx *      expand;
+    ccds_mtx        expand;
 };
 
 typedef struct _list list;

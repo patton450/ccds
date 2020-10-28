@@ -15,17 +15,10 @@ list * list_new(size_t cap, memcfg * mem, ccds_error * e) {
         return NULL;
     }
 
-    l->expand = memcfg_malloc(mem, sizeof(ccds_mtx));
-    if(l->expand == NULL) { 
-        array_free(l->buffer, e);
-        memcfg_free(l->mem, l);
-        CCDS_SET_ERR(e, CCDS_EMEM_FAIL);
-        log_error("expand mutex failed to allocate");
-        return NULL;
-    }
 
+    ccds_mtx_init(&(l->expand));
     l->mem = mem;
-    l->length = cap;
+    l->length = 0;
 
     CCDS_SET_ERR(e, CCDS_EOK);
     return l;
@@ -38,6 +31,7 @@ void list_free(list * l, ccds_error * e) {
         return;
     }
 
+    ccds_mtx_destroy(&(l->expand));
     array_free(l->buffer, e);
     memcfg_free(l->mem, l);
     CCDS_SET_ERR(e, CCDS_EOK);
@@ -67,17 +61,17 @@ bool list_add(list * l, size_t indx, void * data, ccds_error * e){
         CCDS_SET_ERR(e, CCDS_EINDX_OB);
         return false;
     }
-    ccds_mtx_lock(l->expand);
+    
+    ccds_mtx_lock(&(l->expand));
     if(l->length == l->buffer->capacity) {
         log_trace("Expanding the buffer from %lu to %lu", l->length, l->length * 2);
         if(!array_resize(l->buffer, l->length * 2, e)) {
-            ccds_mtx_unlock(l->expand);
+            ccds_mtx_unlock(&(l->expand));
             return false;
         }
     }
-    ccds_mtx_unlock(l->expand);
-
     l->length++;
+    ccds_mtx_unlock(&(l->expand));
     
     void * tmp[1] = { 0 };
     tmp[0] = data;
@@ -85,17 +79,51 @@ bool list_add(list * l, size_t indx, void * data, ccds_error * e){
 }
 
 bool list_add_head(list * l, void * data, ccds_error * e){
-    return list_add(l, 0, data, e);
-}
-
-bool list_add_tail(list * l, void * data, ccds_error * e) {
     if(l == NULL) {
-        log_error("NULL list passed to list_add_tail");
+        log_error("NULL list passed to list_add");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return false;
     }
     
-    return list_add(l, l->length, data, e);
+    ccds_mtx_lock(&(l->expand));
+    if(l->length == l->buffer->capacity) {
+        log_trace("Expanding the buffer from %lu to %lu", l->length, l->length * 2);
+        if(!array_resize(l->buffer, l->length * 2, e)) {
+            ccds_mtx_unlock(&(l->expand));
+            return false;
+        }   
+    }
+    l->length++;
+    ccds_mtx_unlock(&(l->expand));
+    
+    void * tmp[1] = { 0 };
+    tmp[0] = data;
+    return array_insert_shift(l->buffer, 0, tmp, 1, e); 
+}
+
+bool list_add_tail(list * l, void * data, ccds_error * e) {
+    if(l == NULL) {
+        log_error("NULL list passed to list_add");
+        CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
+        return false;
+    }
+
+    size_t len;
+    //pthread_mutex_lock(l->expand);
+    ccds_mtx_lock(&(l->expand));
+    if(l->length == l->buffer->capacity) {
+        log_trace("Expanding the buffer from %lu to %lu", l->length, l->length * 2);
+        if(!array_resize(l->buffer, l->length * 2, e)) {
+            ccds_mtx_unlock(&(l->expand));
+            return false;
+        }
+    }
+    len = l->length++;
+    ccds_mtx_unlock(&(l->expand));
+    
+    void * tmp[1] = { 0 };
+    tmp[0] = data;
+    return array_insert_shift(l->buffer, len, tmp, 1, e); 
 }
 
 /* Accessing elements */
@@ -195,9 +223,7 @@ bool list_swap(list * l, size_t indx1, size_t indx2, ccds_error * e){
 
 void list_foreach(list * l, void (*fn)(void **), ccds_error * e){ 
     
-    if(l == NULL) {
-        ccds_rwlock_wunlock(l->buffer->buff_lock);
-        
+    if(l == NULL) { 
         log_error("NULL list passed to list_foreach");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return;
@@ -210,12 +236,12 @@ void list_foreach(list * l, void (*fn)(void **), ccds_error * e){
         return;
     }
     
-    ccds_rwlock_wlock(a->buff_lock);
+    ccds_rwlock_wlock(&(a->buff_lock));
     for(size_t i = 0; i < l->length; i++){
         fn(&(a->buffer[i]));
     }
 
-    ccds_rwlock_wunlock(a->buff_lock); 
+    ccds_rwlock_wunlock(&(a->buff_lock)); 
     CCDS_SET_ERR(e, CCDS_EOK);
 }
 
@@ -233,13 +259,13 @@ void list_foreachi(list * l, void (*fn)(void **, size_t), ccds_error * e){
         return;
     }
     
-    ccds_rwlock_wlock(a->buff_lock); 
+    ccds_rwlock_wlock(&(a->buff_lock)); 
     
     for(size_t i = 0; i < l->length; i++){
         fn(&(a->buffer[i]), i);
     }
 
-    ccds_rwlock_wunlock(a->buff_lock);
+    ccds_rwlock_wunlock(&(a->buff_lock));
     CCDS_SET_ERR(e, CCDS_EOK);
 }
 
@@ -258,11 +284,11 @@ void * list_foldl(list * l, void * start, void (*fn)(void *, void *), ccds_error
         return NULL;
     }
     
-    ccds_rwlock_rlock(a->buff_lock);
+    ccds_rwlock_rlock(&(a->buff_lock));
     for(size_t i = 0; i < l->length; i ++) {
         fn(start, l->buffer->buffer[i]);
     }
-    ccds_rwlock_runlock(a->buff_lock);
+    ccds_rwlock_runlock(&(a->buff_lock));
     
     CCDS_SET_ERR(e, CCDS_EOK);
     return start;
@@ -282,11 +308,11 @@ void * list_foldr(list * l, void * start, void (*fn)(void *, void *), ccds_error
         return NULL;
     }
     
-    ccds_rwlock_rlock(a->buff_lock);
+    ccds_rwlock_rlock(&(a->buff_lock));
     for(size_t i = l->length - 1; i >= 0; i--) {
         fn(a->buffer[i], start);
     }
-    ccds_rwlock_runlock(a->buff_lock);
+    ccds_rwlock_runlock(&(a->buff_lock));
 
     CCDS_SET_ERR(e, CCDS_EOK);
     return start;
@@ -306,14 +332,14 @@ void list_map (list * l, void ** buff, size_t buff_len, void (*fn) (void *, void
         return;
     }
     
-    ccds_rwlock_rlock(a->buff_lock);
+    ccds_rwlock_rlock(&(a->buff_lock));
     for(size_t i = 0; i < l->length; i++) {
         if(i < buff_len) {
             fn(a->buffer[i], &buff[i]);
         }
     }
 
-    ccds_rwlock_runlock(a->buff_lock);
+    ccds_rwlock_runlock(&(a->buff_lock));
     CCDS_SET_ERR(e, CCDS_EOK);
 }
 
@@ -332,14 +358,14 @@ void list_filter(list * l, void ** buff, size_t buff_len, bool (*fn) (void *), c
     }
 
     size_t j = 0;
-    ccds_rwlock_rlock(a->buff_lock);
+    ccds_rwlock_rlock(&(a->buff_lock));
     for(size_t i = 0; i < l->length; i++) {
         log_trace("%lu", i);
         if(i < buff_len && fn(a->buffer[i])){
             buff[j++] = a->buffer[i];
         }
     }
-    ccds_rwlock_runlock(a->buff_lock);
+    ccds_rwlock_runlock(&(a->buff_lock));
     CCDS_SET_ERR(e, CCDS_EOK);
 }
 
@@ -358,12 +384,12 @@ bool list_any(list * l, bool (*fn) (void *), ccds_error * e){
     }
     
     bool any = false;
-    ccds_rwlock_rlock(a->buff_lock);
+    ccds_rwlock_rlock(&(a->buff_lock));
     for(size_t i = 0; i < l->length && !any; i++) {
         any |= fn(a->buffer[i]);
     }
 
-    ccds_rwlock_runlock(a->buff_lock);
+    ccds_rwlock_runlock(&(a->buff_lock));
     CCDS_SET_ERR(e, CCDS_EOK);
 
     return any;
@@ -384,12 +410,12 @@ bool list_all(list * l, bool (*fn) (void *), ccds_error * e){
     }
 
     bool all = true;
-    ccds_rwlock_rlock(a->buff_lock);
+    ccds_rwlock_rlock(&(a->buff_lock));
     for(size_t i = 0; i < l->length && all; i++) {
         all &= fn(a->buffer[i]);
     }
 
-    ccds_rwlock_runlock(a->buff_lock);
+    ccds_rwlock_runlock(&(a->buff_lock));
     CCDS_SET_ERR(e, CCDS_EOK);
 
     return all;

@@ -21,7 +21,7 @@ struct _array {
     atomic_size_t   capacity;   /* atomic size_t so no race conditions  */
     void **         buffer;     /* Have to use RWLock to keep in sync   */
     memcfg *        mem;        /* User defined memory mangement        */
-    ccds_rwlock*    buff_lock;  /* Reader-Writer lock for the buffer;   */
+    ccds_rwlock     buff_lock;  /* Reader-Writer lock for the buffer;   */
 };
 typedef struct _array array;
 
