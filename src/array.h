@@ -30,19 +30,19 @@ typedef struct _array array;
 NAME:
     array_new
 DESCRIPTION:
-    Allocates space on the heap for a struct _array, if mem != NULL then
-        the funciton will allocate using mem->*alloc or ccds_d*alloc (see mem.h)
+    Allocates space on the heap for a struct _array, if mem != NULL, then
+        the function will allocate using mem->*alloc or ccds_d*alloc (see mem.h)
         and set itself as the memcfg for the array. If mem == NULL, then 
-        the memory defaults are used ccds_d*alloc (see mem.h). Capacity is the inital 
-        capacity of the array note this funciton allocates (cap * sizeof(void *)) bytes.
+        the memory defaults are used ccds_d*alloc (see mem.h). Capacity is the initial 
+        capacity of the array note this function allocates (cap * sizeof(void *)) bytes.
 PARAMETERS:
-    cap:    Inital capacity to set the array to
+    cap:    Initial array capacity
     mem:    Either a pointer to a memcfg, or NULL if defaults are to be used
     e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
                 Otherwise e is NULL, and no errors will be set.
 RETURNS:
-    array *: If we succesfully allocate everything needed for the array
-    NULL: If the funciton encounters an error
+    array *: If we successfully allocate everything needed for the array
+    NULL: If the function encounters an error
 ERRORS:
     CCDS_EOK: The function completed without error
     CCDS_EMEM_FAIL: One of the calls to allocate memory failed
@@ -54,7 +54,7 @@ array * array_new(size_t cap, memcfg * mem, ccds_error * e);
 NAME:
     array_free
 DESCRIPTION:
-    Frees memory allocated to a struct _array by the funciton array_new.
+    Frees memory allocated to a struct _array by the function array_new.
 PARAMETERS:
     a:      Pointer to an array to be freed 
     e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
@@ -71,7 +71,7 @@ void    array_free(array * a, ccds_error * e);
 NAME:
     array_length
 DESCRIPTION:
-    Returns the capacity of the array, to be consistent accross all data structures
+    Returns the capacity of the array, to be consistent across all data structures
 PARAMETERS:
     a:      Pointer to the array we are getting the capacity of 
     e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
@@ -89,14 +89,14 @@ size_t  array_length(array * a, ccds_error * e);
 NAME:
     array_get
 DESCRIPTION:
-    Gets the element occupying indx
+    Gets the element occupying the index
 PARAMETERS:
     a:      Array we are trying to access
     indx:   Index we want to check
     e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
                 Otherwise e is NULL, and no errors will be set 
 RETURNS:
-    void *: The current value of the array at indx
+    void *: The current value of the array at index
 ERRORS:
     CCDS_EINDX_OB: indx >= a->capcity
     CCDS_EINVLF_PARAM: a is NULL
@@ -112,9 +112,9 @@ DESCRIPTION:
     Copies from [a->buffer[indx], a->buffer[indx + n]] into buffer. Assumes buffer has a minimum
         of n * sizeof(void *) bytes allocated to it.
 PARAMETERS:
-    a:      Pointer to the array we are reading from
-    indx:   Starting index to copy from
-    buffer: Array that the results will be written into
+    a:      Pointer to the array we are reading
+    indx:   Starting index to copy n elements
+    buffer: Array of void * that the results will be written
     n:      Number of elements we are copying and size of buffer
     e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
                 Otherwise e is NULL, and no errors will be set. 
@@ -133,13 +133,13 @@ bool    array_getn(array * a, size_t indx, void ** buffer, size_t n, ccds_error 
 NAME:
     array_set
 DESCRIPTION:
-    Writes the specified element at indx in the array, returns what the 
-        void * at indx was before writing, or NULL if the function completes 
+    Writes the specified element at the index into the array. Returns what the 
+        void * at the index was before writing, or NULL if the function completes 
         with error.
 PARAMETERS:
     a:      Pointer to the array we are writing to
     indx:   Index of a->buffer we are writing data into
-    p:      Data that will occupy a->buffer[indx] after the funciton completes
+    p:      Data that will occupy a->buffer[indx] after the function completes
     e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
                 Otherwise e is NULL, and no errors will be set
 RETURNS:
@@ -157,10 +157,10 @@ NAME:
     array_setn
 DESCRIPTION:
     Copies from buffer into [a->buffer[indx], a->buffer[indx + n]]. Assumes buffer has a minimum
-        of n * sizeof(void *) bytes allocated to it. After the funcion call is complete buffer will 
+        of n * sizeof(void *) bytes allocated to it. After the function call is complete buffer will 
         contain the elements that used to occupy [a->buffer[indx], a->buffer[indx + n - 1]].
 PARAMETERS:
-    a:      Pointer to the array we are  writing to
+    a:      Pointer to the array we are writing to
     indx:   Starting index 
     buffer: Array that holds elems we are writing into the array
     n:      Number of elements we are writing
@@ -188,7 +188,7 @@ PARAMETERS:
     e:  Pointer to an error enum, if e != NULL then error is set accordingly. 
         Otherwise e is NULL, and no errors will be set 
 RETURNS:
-    true:   if the fucntion completes without error
+    true:   if the function completes without error
     false:  otherwise
 ERRORS:
     CCDS_EINVLD_PARAM: a is NULL
@@ -204,7 +204,7 @@ NAME:
 DESCRIPTION:
     Copies from buffer into [a->buffer[indx], a->buffer[indx + n - 1]]. Elements from 
         [a->buffer[indx + n], a->buffer[a->capacity - n]] will be shifted by n places to the left.
-        Buffer is wrriten into [a->buffer[capacity - n], a->buffer[capacity - 1]]. After the funciton call
+        Buffer is written into [a->buffer[capacity - n], a->buffer[capacity - 1]]. After the function call
         the elements that previously occupied [a->buffer[a->capacity - n], a->buffer[a->capacity - 1]] 
         will occupy buffer.
 PARAMETERS:
@@ -215,7 +215,7 @@ PARAMETERS:
     e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
                 Otherwise e is NULL, and no errors will be set 
 RETURNS:
-    true:   if the fucntion completes without error
+    true:   if the function completes without error
     false:  otherwise
 ERRORS:
     CCDS_EINDV_PARAM: If a == NULL
@@ -232,8 +232,8 @@ NAME:
     array_remove_shift
 DESCRIPTION:
     Removes [a->buffer[indx], a->buffer[indx + n]]. Elements [a->buffer[indx + n], a->buffer[a->capacity - 1]]
-        will be be shifted by n places to the left. The elemnts that occupy buffer will be written to
-        [a->buffer[a->capacity - n], a->buffer[a->capacity]]. After the funciton call is complete
+        will be be shifted by n places to the left. The elements that occupy buffer will be written to
+        [a->buffer[a->capacity - n], a->buffer[a->capacity]]. After the function call is complete
         buffer will contain the elements that previously occupied [a->buffer[indx], a->buffer[indx + n]]
 PARAMETERS:
     a:      Array we are inserting into
@@ -243,7 +243,7 @@ PARAMETERS:
     e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
                 Otherwise e is NULL, and no errors will be set 
 RETURNS:
-    true:   if the fucntion completes without error
+    true:   if the function completes without error
     false:  otherwise
 ERRORS:
     CCDS_EINDV_PARAM: If a == NULL
@@ -266,7 +266,7 @@ PARAMETERS:
     e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
                 Otherwise e is NULL, and no errors will be set 
 RETURNS:
-    true:   if the fucntion completes without error
+    true:   if the function completes without error
     false:  otherwise
 ERRORS:
     CCDS_EINDV_PARAM: If a == NULL
@@ -280,16 +280,16 @@ bool    array_swap(array * a, size_t indx1, size_t indx2, ccds_error * e);
 NAME:
     array_swap_if
 DESCRIPTION:
-    Swaps elements at the two indices, if the comparison funciton returns true
+    Swaps elements at the two indices, if the comparison function returns true
 PARAMETERS:
-    a:      Array funciton operates on
+    a:      Array function operates on
     indx1:  First index
     index2: Second index
-    cmp:    Comparison funciton that compares the elements at indx1 and indx2
+    cmp:    Comparison function that compares the elements at indx1 and indx2
     e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
                 Otherwise e is NULL, and no errors will be set 
 RETURNS:
-    true:   if the fucntion completes without error
+    true:   if the function completes without error
     false:  otherwise
 ERRORS:
     CCDS_EINDV_PARAM: If a == NULL
@@ -303,9 +303,9 @@ bool    array_swap_if(array * a, size_t indx1, size_t indx2, bool (*cmp) (void *
 NAME:
     array_foreach
 DESCRIPTION:
-    Loops over every element passing a pointer to the current elem to fn for user
-        interaction. NOTE: if you need to manipulate the array dont use the 
-        array methods as this funciton holds a write lock on a->buffer.
+    Loops over every element passing a pointer to the current element to the function
+        for user interaction. NOTE: if you need to manipulate the array don't use the 
+        array methods as this function holds a write lock on a->buffer.
 PARAMETERS:
     a:  Pointer to the array we are looping over
     fn: Pointer to caller's function that will be given pointers to the elements
@@ -323,8 +323,8 @@ NAME:
     array_foreachi
 DESCRIPTION:
     Loops over every element passing a pointer to the current element, 
-        and index to fn for user interaction. NOTE: if you need to manipulate 
-        the array dont use the array methods as this funciton holds a write lock on a->buffer.
+        and index to fthe funciton for user interaction. NOTE: if you need to manipulate 
+        the array don't use the array methods as this function holds a write lock on a->buffer.
 PARAMETERS:
     a:  Pointer to the array we are looping over
     fn: Pointer to caller's function that will be given pointers to the elements
@@ -335,5 +335,4 @@ ERRORS:
     CCDS_EOK: The function completed without error
 */
 void    array_foreachi(array * a, void (*fn)(void **, size_t), ccds_error * e);
-
 #endif
