@@ -292,7 +292,7 @@ void * list_foldr(list * l, void * start, void (*fn)(void *, void *), ccds_error
     return start;
 }
 
-void list_map (list * l, void ** buff, size_t buff_len, void (*fn) (void **, void **), ccds_error * e){    
+void list_map (list * l, void ** buff, size_t buff_len, void (*fn) (void *, void **), ccds_error * e){    
     if(l == NULL) {     
         log_error("NULL list passed to list_map");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
@@ -309,7 +309,7 @@ void list_map (list * l, void ** buff, size_t buff_len, void (*fn) (void **, voi
     ccds_rwlock_rlock(a->buff_lock);
     for(size_t i = 0; i < l->length; i++) {
         if(i < buff_len) {
-            fn(&a->buffer[i], &buff[i]);
+            fn(a->buffer[i], &buff[i]);
         }
     }
 
