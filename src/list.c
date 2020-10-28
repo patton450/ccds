@@ -173,7 +173,7 @@ void * list_remove(list * l, size_t indx, ccds_error * e){
     }
     
     if(indx >= l->length) {
-        log_error("index: %lu exceeds or equals list length: %lu", indx, l->length);
+        //log_warn("index: %lu exceeds or equals list length: %lu", indx, l->length);
         CCDS_SET_ERR(e, CCDS_EINDX_OB);
         return NULL;
     }
