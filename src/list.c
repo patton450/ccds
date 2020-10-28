@@ -79,26 +79,8 @@ bool list_add(list * l, size_t indx, void * data, ccds_error * e){
 }
 
 bool list_add_head(list * l, void * data, ccds_error * e){
-    if(l == NULL) {
-        log_error("NULL list passed to list_add");
-        CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
-        return false;
-    }
     
-    ccds_mtx_lock(&(l->expand));
-    if(l->length == l->buffer->capacity) {
-        log_trace("Expanding the buffer from %lu to %lu", l->length, l->length * 2);
-        if(!array_resize(l->buffer, l->length * 2, e)) {
-            ccds_mtx_unlock(&(l->expand));
-            return false;
-        }   
-    }
-    l->length++;
-    ccds_mtx_unlock(&(l->expand));
-    
-    void * tmp[1] = { 0 };
-    tmp[0] = data;
-    return array_insert_shift(l->buffer, 0, tmp, 1, e); 
+    return list_add(l, 0, data, e);
 }
 
 bool list_add_tail(list * l, void * data, ccds_error * e) {
@@ -107,23 +89,8 @@ bool list_add_tail(list * l, void * data, ccds_error * e) {
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return false;
     }
-
-    size_t len;
-    //pthread_mutex_lock(l->expand);
-    ccds_mtx_lock(&(l->expand));
-    if(l->length == l->buffer->capacity) {
-        log_trace("Expanding the buffer from %lu to %lu", l->length, l->length * 2);
-        if(!array_resize(l->buffer, l->length * 2, e)) {
-            ccds_mtx_unlock(&(l->expand));
-            return false;
-        }
-    }
-    len = l->length++;
-    ccds_mtx_unlock(&(l->expand));
     
-    void * tmp[1] = { 0 };
-    tmp[0] = data;
-    return array_insert_shift(l->buffer, len, tmp, 1, e); 
+    return list_add(l, l->length, data, e);
 }
 
 /* Accessing elements */
