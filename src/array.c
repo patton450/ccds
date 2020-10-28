@@ -1,6 +1,7 @@
 #include "array.h"
 
 array * array_new(size_t cap, memcfg * m, ccds_error * e) {  
+    log_info("Creating an array");
     /* Allocate pointers needed for the array, set errors if we encounter any */
     array * a = memcfg_malloc(m, sizeof(array));
     if(a == NULL) {
@@ -10,7 +11,6 @@ array * array_new(size_t cap, memcfg * m, ccds_error * e) {
     }
     
     a->buffer = memcfg_calloc(m, cap, sizeof(void *));
-    log_debug("a->buffer = %p", a->buffer);
     if(a->buffer == NULL) {
         log_error("Buffer failed to allocate");
         CCDS_SET_ERR(e, CCDS_EMEM_FAIL);

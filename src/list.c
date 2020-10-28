@@ -62,6 +62,8 @@ bool list_add(list * l, size_t indx, void * data, ccds_error * e){
         return false;
     }
     
+    void * tmp[1] = { 0 };
+    tmp[0] = data;
     ccds_mtx_lock(&(l->expand));
     if(l->length == l->buffer->capacity) {
         log_trace("Expanding the buffer from %lu to %lu", l->length, l->length * 2);
@@ -70,27 +72,53 @@ bool list_add(list * l, size_t indx, void * data, ccds_error * e){
             return false;
         }
     }
-    l->length++;
     ccds_mtx_unlock(&(l->expand));
-    
-    void * tmp[1] = { 0 };
-    tmp[0] = data;
-    return array_insert_shift(l->buffer, indx, tmp, 1, e); 
+    return array_insert_shift(l->buffer, l->length++, tmp, 1, e); 
 }
 
-bool list_add_head(list * l, void * data, ccds_error * e){
-    
-    return list_add(l, 0, data, e);
-}
-
-bool list_add_tail(list * l, void * data, ccds_error * e) {
+bool list_add_head(list * l, void * data, ccds_error * e) { 
     if(l == NULL) {
-        log_error("NULL list passed to list_add");
+        log_error("NULL list passed to list_add_tail");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return false;
     }
     
-    return list_add(l, l->length, data, e);
+    void * tmp[1] = { 0 };
+    tmp[0] = data;
+    ccds_mtx_lock(&(l->expand));
+    if(l->length == l->buffer->capacity) {
+        log_trace("Expanding the buffer from %lu to %lu", l->length, l->length * 2);
+        if(!array_resize(l->buffer, l->length * 2, e)) {
+            ccds_mtx_unlock(&(l->expand));
+            return false;
+        }
+    }
+    ccds_mtx_unlock(&(l->expand));
+    l->length++; 
+    return array_insert_shift(l->buffer, 0, tmp, 1, e); 
+}
+
+bool list_add_tail(list * l, void * data, ccds_error * e) {
+    if(l == NULL) {
+        log_error("NULL list passed to list_add_tail");
+        CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
+        return false;
+    }
+    
+    ccds_mtx_lock(&(l->expand));
+    if(l->length == l->buffer->capacity) {
+        log_trace("Expanding the buffer from %lu to %lu", l->length, l->length * 2);
+        if(!array_resize(l->buffer, l->length * 2, e)) {
+            ccds_mtx_unlock(&(l->expand));
+            return false;
+        }
+    }
+    ccds_mtx_unlock(&(l->expand));
+    size_t len = l->length++;
+    
+    void * tmp[1] = { 0 };
+    tmp[0] = data;
+    return array_insert_shift(l->buffer, len, tmp, 1, e); 
 }
 
 /* Accessing elements */
@@ -140,7 +168,7 @@ void * list_remove(list * l, size_t indx, ccds_error * e){
     }
     
     if(indx >= l->length) {
-        //log_warn("index: %lu exceeds or equals list length: %lu", indx, l->length);
+        log_warn("index: %lu exceeds or equals list length: %lu", indx, l->length);
         CCDS_SET_ERR(e, CCDS_EINDX_OB);
         return NULL;
     }
@@ -163,7 +191,7 @@ void * list_remove_tail(list * l, ccds_error * e) {
     }
     
     if(l->length == 0) {
-        log_error("Cannot remove the tail of an empty list");
+        log_warn("Cannot remove the tail of an empty list");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return NULL;
     }
