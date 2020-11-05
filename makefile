@@ -1,7 +1,7 @@
 
 PROJ=ccds
 WFLAGS=-Wall -Wextra 
-CFLAGS=-c -std=c11 -fpic
+CFLAGS=-c -std=gnu17 -fpic
 
 SRCDIR=./src/
 OBJDIR=./obj/
@@ -25,7 +25,7 @@ log: $(SRCDIR)log.c $(SRCDIR)log.h
 #the object files depend on the src
 $(OBJS): $(SRCS)
 	@if test ! -d "./obj"; then mkdir "obj"; fi
-	gcc $(CFLAGS) $(WFLAGS) $(SRCDIR)$(notdir $*).c -o $*.o
+	gcc $(CFLAGS) $(WFLAGS) $(SRCDIR)$(notdir $*).c -lpthread -o $*.o
 
 $(SRCS): $(HEAD)
 

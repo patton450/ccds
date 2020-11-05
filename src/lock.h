@@ -1,8 +1,8 @@
 #ifndef CCDS_LOCK_H
 #define CCDS_LOCK_H
 
-
 #include <pthread.h>
+#include <sys/types.h>
 
 typedef pthread_rwlock_t ccds_rwlock;
 
