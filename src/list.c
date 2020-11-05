@@ -207,7 +207,8 @@ bool list_swap(list * l, size_t indx1, size_t indx2, ccds_error * e){
     }
     
     if(indx1 >= l->length || indx2 >= l->length){
-        log_error("Either indx1: %lu or indx2: %lu exceed or equal list length: %lu", indx1, indx2, l->length);
+        log_error("Either indx1: %lu or indx2: %lu exceed or equal list length: %lu", 
+			indx1, indx2, l->length);
         CCDS_SET_ERR(e, CCDS_EINDX_OB);
         return false;
     }
@@ -304,9 +305,10 @@ void * list_foldr(list * l, void * start, void (*fn)(void *, void *), ccds_error
     }
     
     ccds_rwlock_rlock(&(a->buff_lock));
-    for(size_t i = l->length - 1; i >= 0; i--) {
+    for(size_t i = l->length - 1; i > 0; i--) {
         fn(a->buffer[i], start);
     }
+    fn(a->buffer[0], start);
     ccds_rwlock_runlock(&(a->buff_lock));
 
     CCDS_SET_ERR(e, CCDS_EOK);
