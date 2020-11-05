@@ -4,6 +4,8 @@
 #include <pthread.h>
 #include <sys/types.h>
 
+
+/* Threading locks wrapper functions, allows users to change the locking objects */
 typedef pthread_rwlock_t ccds_rwlock;
 
 #define ccds_rwlock_init(rwlock)        pthread_rwlock_init(rwlock, NULL)
