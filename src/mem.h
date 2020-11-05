@@ -20,6 +20,9 @@ struct _memcfg {
 
 typedef struct _memcfg memcfg;
 
+
+/* Memory maniputalion methods, if m is NULL, or the specified method in m is NULL
+    then the default method is used */
 #define memcfg_free(m, ptr)             !(m && m->free) ? ccds_dfree(ptr) : m->free(ptr)
 #define memcfg_malloc(m, size)          !(m && m->malloc) ? ccds_dmalloc(size) : m->malloc(size)
 #define memcfg_calloc(m, cnt, size)     !(m && m->calloc) ? ccds_dcalloc(cnt, size) : m->calloc(cnt, size)
