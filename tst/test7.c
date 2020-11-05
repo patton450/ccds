@@ -17,7 +17,7 @@ int threads = 8;
 atomic_int check[LIM];
 
 int get_rand() {
-    return arc4random() % LIM;
+    return rand() % LIM;
 }
 
 void * thread_add_fn (void * param) {
@@ -51,6 +51,7 @@ void * thread_rm_fn(void * param){
 }
 
 int main() {
+    srand(time(NULL));
     queue * q = queue_new(NULL, NULL);
    
     pthread_t wrk_thrds[threads];

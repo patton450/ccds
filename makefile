@@ -1,7 +1,7 @@
-
 PROJ=ccds
 WFLAGS=-Wall -Wextra 
-CFLAGS=-c -std=gnu17 -fpic
+CSTD=-std=gnu17
+CFLAGS=-c -fpic $(CSTD)
 
 SRCDIR=./src/
 OBJDIR=./obj/
@@ -13,11 +13,17 @@ HEAD=$(wildcard $(SRCDIR)*.h)
 OBJS=$(addprefix $(OBJDIR), $(patsubst %.c, %.o, $(notdir $(SRCS))))
 TSTS=$(wildcard $(SRCDIR)*.c)
 
+
+MAJOR=0
+MINOR=0
+PATCH=1
+
 all: log shared
 
 shared: $(OBJS)
 	@if test ! -d "./bin"; then mkdir "bin"; fi
-	gcc -shared -o $(BINDIR)lib$(PROJ).so $(OBJS)
+	gcc $(CSTD) -shared -lpthread -Wl,-soname,$(BINDIR)lib$(PROJ).so -o \
+		$(BINDIR)lib$(PROJ).so $(OBJS)
 
 log: $(SRCDIR)log.c $(SRCDIR)log.h
 	@if test ! -d "./obj"; then mkdir "obj"; fi
@@ -32,3 +38,4 @@ $(SRCS): $(HEAD)
 #cleanout binaries
 clean: 
 	rm $(OBJDIR)*
+	rm $(BINDIR)*
