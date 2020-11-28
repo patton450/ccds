@@ -90,6 +90,23 @@ ERRORS:
 */
 bool    list_add(list * l, size_t indx, void * data, ccds_error * e);
 
+/* 
+NAME:
+    list_add_head
+DESCRIPTION:
+    Adds element to the front of the list
+PARAMETERS:
+    l:      List we are adding to
+    data:   Element we are adding to the list
+    e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
+                Otherwise e is NULL, and no errors will be set.
+RETURNS:
+    true: If the function completed without error
+    false: Otherwise
+ERRORS:
+    CCDS_EOK: The function completed without error
+*/
+bool    list_add_np(list * l, bool(*cmp)(void *, void *), void * data, ccds_error e);
 
 /* 
 NAME:
@@ -403,4 +420,6 @@ ERRORS:
     CCDS_EOK: The function completed without error
 */
 bool    list_all(list * l, bool (*fn) (void *), ccds_error * e);
+
+
 #endif
