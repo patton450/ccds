@@ -5,7 +5,7 @@
 #include <sys/types.h>
 
 
-typedef pthread_condt   ccds_condv;
+typedef pthread_cond_t   ccds_condv;
 #define ccds_condv_init(condv)          pthread_cond_init(condv, NULL)
 #define ccds_condv_destroy(condv)       pthread_cond_destroy(condv)
 

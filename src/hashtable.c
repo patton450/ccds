@@ -1,6 +1,6 @@
 #include "hashtable.h"
 
-hashtable * hashtable_new(size_t cap, size_t (*hash)(void *) h, memcfg * mem, ccds_error * e){
+hashtable * hashtable_new(size_t cap, uhash64_fn* h, kcmp_fn* kcmp, memcfg * mem, ccds_error * e){
     hashtable * ht = memcfg_malloc(mem, sizeof(hashtable));
     if(ht == NULL) {
         CCDS_SET_ERR(e, CCDS_EMEM_FAIL);
@@ -32,40 +32,44 @@ hashtable * hashtable_new(size_t cap, size_t (*hash)(void *) h, memcfg * mem, cc
 
     ht->length = 0;
     ht->mem = mem;
-    ht->hash_fn = h;
+    ht->hash = h;
+    ht->kcmp = kcmp;
 
     CCDS_SET_ERR(e, CCDS_EOK);
     return ht;
 }
 
-void hashtable_free(hastbale * ht, ccds_error * e){
+void hashtable_free(hashtable * ht, ccds_error * e){
     if(ht == NULL) {
-        CCDS_SET_ERR(e, CCDS_EINVLD_PARM);
-        return 0;
+        CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
+        return;
     }
-    CCDS_SET_ERR(e, CCDS_SET_EOK);
+    CCDS_SET_ERR(e, CCDS_EOK);
 
-    list_free(ht->rep, e);
+    array_free(ht->rep, e);
     memcfg_free(ht->mem, ht);
 }
 
 size_t hashtable_length(hashtable * ht, ccds_error * e) {
     if(ht == NULL){
-        CCDS_SET_ERR(e, CCDS_EINVLD_PARM);
+        CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return 0;
     }
     
     return ht->length;
 }
 
-bool hashtable_add(hashtable * ht, void * key, void * val, cccds_error * e){
-    size_t hash = ht->hash_fn(key);
-    size_t pos = hash % ht->rep->cap;
+bool hashtable_add(hashtable * ht, void * key, void * val, ccds_error * e){
+    size_t hash = ht->hash(key);
+    size_t pos = hash % ht->rep->capacity;
 
     list * l = array_get(ht->rep, pos, e);
-    
+    return true; 
 }
 
-void * hahstable_get(hashtable * ht, void * key. ccds_error * e) {
+/*
+void * hahstable_get(hashtable * ht, void * key, ccds_error * e) {
+    return NULL;
 
 }
+*/
