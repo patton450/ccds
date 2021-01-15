@@ -1,14 +1,15 @@
 #ifndef CCDS_HASHTABLE_H
 #define CCDS_HASHTABLE_H
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "array.h"
 #include "list.h"
 #include "mem.h"
 #include "error.h"
 #include "log.h"
 #include "util.h"
-#include <stddef.h>
-#include <stdint.h>
 
 typedef uint64_t    uhash64_fn (void *);
 typedef bool        kcmp_fn (void *, void *);

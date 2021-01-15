@@ -25,7 +25,9 @@ hashtable * hashtable_new(size_t cap, uhash64_fn* h, kcmp_fn* kcmp, memcfg * mem
     }
 
     if(failed){
-        // FREE ALL LISTS
+        for(i = i-1; i >= 0; i++){
+            list_free(l, e);
+        }
         CCDS_SET_ERR(e, CCDS_EMEM_FAIL);
         return NULL;
     }
