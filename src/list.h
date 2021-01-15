@@ -24,7 +24,7 @@ typedef struct _list list;
 NAME:
     list_new
 DESCRIPTION:
-    Allocates space for a new list and returns the pointer
+    Allocates space for a new list and returns a pointer to the allocated list
 PARAMETERS:
     cap:    Initial capacity for the list
     mem:    memcfg struct * for user memory allocation or NULL for default memory allocators

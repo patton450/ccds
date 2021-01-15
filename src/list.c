@@ -234,7 +234,9 @@ void list_foreach(list * l, void (*fn)(void **), ccds_error * e){
     
     ccds_rwlock_wlock(&(a->buff_lock));
     for(size_t i = 0; i < l->length; i++){
-        fn(&(a->buffer[i]));
+        if(a && a->buffer && a->buffer[i]) {
+            fn(&(a->buffer[i]));
+        }
     }
 
     ccds_rwlock_wunlock(&(a->buff_lock)); 
@@ -247,20 +249,20 @@ void list_foreachi(list * l, void (*fn)(void **, size_t), ccds_error * e){
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return;
     }
-
+ 
     array * a = l->buffer;
-    if(a == NULL) {     
+    if(a == NULL) { 
         log_error("NULL array passed to list_map");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return;
     }
     
-    ccds_rwlock_wlock(&(a->buff_lock)); 
-    
+    ccds_rwlock_wlock(&(a->buff_lock));     
     for(size_t i = 0; i < l->length; i++){
-        fn(&(a->buffer[i]), i);
+        if(a && a->buffer && a->buffer[i]) {
+            fn(&(a->buffer[i]), i);
+        }
     }
-
     ccds_rwlock_wunlock(&(a->buff_lock));
     CCDS_SET_ERR(e, CCDS_EOK);
 }
@@ -282,7 +284,8 @@ void * list_foldl(list * l, void * start, void (*fn)(void *, void *), ccds_error
     
     ccds_rwlock_rlock(&(a->buff_lock));
     for(size_t i = 0; i < l->length; i ++) {
-        fn(start, l->buffer->buffer[i]);
+        if(a && a->buffer[i])
+        fn(start, a->buffer[i]);
     }
     ccds_rwlock_runlock(&(a->buff_lock));
     
@@ -322,20 +325,17 @@ void list_map (list * l, void ** buff, size_t buff_len, void (*fn) (void *, void
         return;
     }
 
-    array * a = l->buffer;
-    if(a == NULL) {     
+    if(l->buffer == NULL) {     
         log_error("NULL array passed to list_map");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return;
     }
     
+    array * a = l->buffer;
     ccds_rwlock_rlock(&(a->buff_lock));
-    for(size_t i = 0; i < l->length; i++) {
-        if(i < buff_len) {
-            fn(a->buffer[i], &buff[i]);
-        }
+    for(size_t i = 0; i < l->length && i < buff_len; i++) {
+        fn(a->buffer[i], &buff[i]);
     }
-
     ccds_rwlock_runlock(&(a->buff_lock));
     CCDS_SET_ERR(e, CCDS_EOK);
 }
@@ -357,7 +357,6 @@ void list_filter(list * l, void ** buff, size_t buff_len, bool (*fn) (void *), c
     size_t j = 0;
     ccds_rwlock_rlock(&(a->buff_lock));
     for(size_t i = 0; i < l->length; i++) {
-        log_trace("%lu", i);
         if(i < buff_len && fn(a->buffer[i])){
             buff[j++] = a->buffer[i];
         }
