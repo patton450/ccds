@@ -3,22 +3,23 @@
 array * array_new(size_t cap, memcfg * m, ccds_error * e) {  
     /* Allocate pointers needed for the array, set errors if we encounter any */
     array * a = memcfg_malloc(m, sizeof(array));
-    if(a == NULL) {
-        log_error("Array failed to allocate");
-        CCDS_SET_ERR(e, CCDS_EMEM_FAIL);
-        return NULL;
-    }
-    
+    EXIST(a, e, "array");
+
+    /*  Allocate buffer and determine whether we get the memory or not.
+            Uses user provided memcfg, or NULL, if NULL uses the ccds_dmalloc macro 
+            defined in mem.h */
     a->buffer = memcfg_calloc(m, cap, sizeof(void *));
-    if(a->buffer == NULL) {
-        log_error("Buffer failed to allocate");
-        CCDS_SET_ERR(e, CCDS_EMEM_FAIL);
-        return NULL;
-    }
+    EXIST(a->buffer, e, "buffer");
+
 
     /* Initalize the rwlock and check errors */
     int tmp = ccds_rwlock_init(&(a->buff_lock)); 
-    if(tmp != 0){
+    if(tmp != 0) {
+        
+        /* Clean up our allocated mem*/
+        memcfg_free(m, a->buffer);
+        memcfg_free(m, a);
+
         log_error("Buffer rwlock failed to initalize with code %d", tmp);
         switch(tmp){
             case EAGAIN:
@@ -93,17 +94,15 @@ size_t array_length(array * a, ccds_error * e) {
     return a->capacity;
 }
 
-void * array_get(array * a, size_t indx, ccds_error * e){ 
-    ccds_rwlock_rlock(&(a->buff_lock));
+void * array_get(array * a, size_t indx, ccds_error * e) { 
     
     if(a == NULL) { 
-        ccds_rwlock_runlock(&(a->buff_lock));
-        
         log_error("NULL array passed into array_get");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return NULL; 
     }
     
+    ccds_rwlock_rlock(&(a->buff_lock));
     if(indx > a->capacity) {
         ccds_rwlock_runlock(&(a->buff_lock));
         
@@ -121,22 +120,18 @@ void * array_get(array * a, size_t indx, ccds_error * e){
 
 
 bool array_getn(array * a, size_t indx, void ** buff, size_t n, ccds_error * e){
-    ccds_rwlock_rlock(&(a->buff_lock));
     if(n == 0) { 
-        ccds_rwlock_runlock(&(a->buff_lock));
-        CCDS_SET_ERR(e, CCDS_EOK);
-        return true; 
+        CCDS_SET_ERR(e, a == NULL ? CCDS_EINVLD_PARAM : CCDS_EOK);
+        return (a == NULL); 
     }
     
-    if(a == NULL || buff == NULL) {
-        ccds_rwlock_runlock(&(a->buff_lock));
-        
+    if(a == NULL || buff == NULL) { 
         log_error("NULL %s passed into array_getn", (a == NULL ? "array" : "buffer"));
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return false;
     }
-
-
+    
+    ccds_rwlock_rlock(&(a->buff_lock));
     /*  The max elem we access should be indx + (n - 1) */
     if(indx + n > a->capacity){ 
         ccds_rwlock_runlock(&(a->buff_lock));
@@ -192,8 +187,7 @@ bool array_setn(array * a, size_t indx, void ** buff, size_t n, ccds_error * e){
     }
 
     if(a == NULL) {
-        ccds_rwlock_wunlock(&(a->buff_lock));
-        
+        ccds_rwlock_wunlock(&(a->buff_lock)); 
         log_error("NULL array passed into array_setn");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return false; 
@@ -406,15 +400,14 @@ bool array_swap(array * a, size_t indx1, size_t indx2, ccds_error * e){
 }
 
 void array_foreach(array * a, void (*fn)(void **), ccds_error * e){
-    ccds_rwlock_wlock(&(a->buff_lock));
+
     if(a == NULL){
-        ccds_rwlock_wunlock(&(a->buff_lock));
-        
         log_error("NULL array passed into array_foreach");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return;
     }
 
+    ccds_rwlock_wlock(&(a->buff_lock));
     /* Passes void ** to fn so user can modify what a->buffer[indx] holds */
     for(size_t i = 0; i < a->capacity; i++){
         fn(&(a->buffer[i]));
@@ -425,16 +418,14 @@ void array_foreach(array * a, void (*fn)(void **), ccds_error * e){
 }
 
 void array_foreachi(array * a, void (*fn)(void **, size_t), ccds_error * e){
-    ccds_rwlock_wlock(&(a->buff_lock));
 
     if(a == NULL){
-        ccds_rwlock_wunlock(&(a->buff_lock));
-        
         log_error("NULL array passed into array_foreachi");
         CCDS_SET_ERR(e, CCDS_EINVLD_PARAM);
         return;
     }
 
+    ccds_rwlock_wlock(&(a->buff_lock));
     /* Passes void ** to fn so user can modify what a->buffer[indx] holds */
     for(size_t i = 0; i < a->capacity; i++){
         fn(&(a->buffer[i]), i);
