@@ -180,6 +180,27 @@ bool    array_setn(array * a, size_t indx, void ** buffer, size_t n, ccds_error 
 
 /* 
 NAME:
+    array_set_if_null
+DESCRIPTION:
+    Sets the index of the array to data, if the array is null at that index before insertion
+PARAMETERS:
+    a:      Pointer to the array we are writing to
+    indx:   Index we are trying to set 
+    data:   Data we are trying to insert
+    e:      Pointer to an error enum, if e != NULL then error is set accordingly. 
+                Otherwise e is NULL, and no errors will be set.
+RETURNS:
+    true:   if the function completes without error
+    false:  otherwise
+ERRORS:
+    CCDS_EINDX_OB: indx >= a->capcity
+    CCDS_EINVLD_PARAM: a is NULL or buffer is NULL
+    CCDS_EOK: The function completed without error
+*/
+bool    array_set_if_null(array * a, size_t indx, void * data, ccds_error * e);
+
+/* 
+NAME:
     array_resize
 DESCRIPTION:
     Resizes the array to the size specified 

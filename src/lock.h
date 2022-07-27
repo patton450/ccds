@@ -5,6 +5,14 @@
 #include <sys/types.h>
 
 
+typedef pthread_cond_t   ccds_condv;
+#define ccds_condv_init(condv)          pthread_cond_init(condv, NULL)
+#define ccds_condv_destroy(condv)       pthread_cond_destroy(condv)
+
+#define ccds_condv_wait(condv, lock)    pthread_cond_wait(condv, lock)
+#define ccds_condv_signal(condv)        pthread_cond_signal(condv)
+
+
 /* Threading locks wrapper functions, allows users to change the locking objects */
 typedef pthread_rwlock_t ccds_rwlock;
 
