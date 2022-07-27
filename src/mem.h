@@ -4,12 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Macros for the default memory management funcitons */
-#define ccds_dfree      free
-#define ccds_dmalloc    malloc
-#define ccds_drealloc   realloc
-#define ccds_dcalloc    calloc
-
 /* Struct for handeling user defined memory mngmt */
 struct _memcfg {
     void (*free)(void *);
@@ -20,6 +14,11 @@ struct _memcfg {
 
 typedef struct _memcfg memcfg;
 
+/* Macros for the default memory management funcitons */
+#define ccds_dfree      free
+#define ccds_dmalloc    malloc
+#define ccds_drealloc   realloc
+#define ccds_dcalloc    calloc
 
 /* Memory maniputalion methods, if m is NULL, or the specified method in m is NULL
     then the default method is used */

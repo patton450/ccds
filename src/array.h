@@ -34,7 +34,8 @@ DESCRIPTION:
         the function will allocate using mem->*alloc or ccds_d*alloc (see mem.h)
         and set itself as the memcfg for the array. If mem == NULL, then 
         the memory defaults are used ccds_d*alloc (see mem.h). Capacity is the initial 
-        capacity of the array note this function allocates (cap * sizeof(void *)) bytes.
+        capacity of the array. Note this function allocates (cap * sizeof(void *)) bytes 
+        for the buffer.
 PARAMETERS:
     cap:    Initial array capacity
     mem:    Either a pointer to a memcfg, or NULL if defaults are to be used
@@ -344,7 +345,7 @@ NAME:
     array_foreachi
 DESCRIPTION:
     Loops over every element passing a pointer to the current element, 
-        and index to fthe funciton for user interaction. NOTE: if you need to manipulate 
+        and index to the funciton for user interaction. NOTE: if you need to manipulate 
         the array don't use the array methods as this function holds a write lock on a->buffer.
 PARAMETERS:
     a:  Pointer to the array we are looping over
