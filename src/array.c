@@ -1,4 +1,4 @@
-#include "array.h"
+#include "include/array.h"
 
 array * array_new(size_t cap, memcfg * m, ccds_error * e) {  
     /* Allocate pointers needed for the array, set errors if we encounter any */

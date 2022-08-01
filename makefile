@@ -13,6 +13,7 @@ CFLAGS=-c -fpic $(CSTD)
 
 # Direcotries
 SRCDIR=./src
+HEADDIR=./src/include
 OBJDIR=./obj
 TSTDIR=./test
 LIBDIR=./lib
@@ -20,7 +21,7 @@ BINDIR=./bin
 
 # Files
 SRCS=$(wildcard $(SRCDIR)/*.c)
-HEAD=$(wildcard $(SRCDIR)/*.h)
+HEAD=$(wildcard $(HEADDIR)/*.h)
 OBJS=$(addprefix $(OBJDIR)/, $(patsubst %.c, %.o, $(notdir $(SRCS))))
 TSTS=$(wildcard $(TSTDIR)/*.c)
 

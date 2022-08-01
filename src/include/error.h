@@ -16,9 +16,25 @@ enum _ccds_error {
 
 typedef enum _ccds_error ccds_error;
 
+void ccds_print_error(ccds_error e) {
+    switch(e){
+        case CCDS_EOK:
+        case CCDS_EMEM_FAIL:
+        case CCDS_ERSC_FAIL:
+        case CCDS_EPREM:
+        case CCDS_EINDX_OB:
+        case CCDS_EBUSY:
+        case CCDS_E_PRE_COND:
+            printf("Failed to meet a precondition");
+            break;
+        default:
+            printf("Unrecognized error occured");
+            break;
+    }
+}
+
 #define CCDS_SET_ERR(e, val) ({     \
             if(e) {                 \
                 *e = val;           \
             }})
-
 #endif
