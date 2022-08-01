@@ -14,6 +14,7 @@ hashtable * hashtable_new(size_t cap, uhash64_fn* h, kcmp_fn* kcmp, memcfg * mem
         return NULL;
     }
 
+    /*
     size_t i;
     bool failed = false;
     for(i = 0; i < cap; i++){
@@ -25,12 +26,13 @@ hashtable * hashtable_new(size_t cap, uhash64_fn* h, kcmp_fn* kcmp, memcfg * mem
     }
 
     if(failed){
-        for(i = i-1; i >= 0; i++){
+        for(i = i-1; i > 0; i--){
             list_free(l, e);
         }
         CCDS_SET_ERR(e, CCDS_EMEM_FAIL);
         return NULL;
     }
+    */
 
     ht->length = 0;
     ht->mem = mem;

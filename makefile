@@ -5,12 +5,6 @@ MAJOR=0
 MINOR=0
 PATCH=1
 
-# Library names
-LIB_MAJOR_MINOR_PATCH=lib$(PROJ).so.$(MAJOR).$(MINOR).$(PATCH)
-LIB_MAJOR_MINOR=lib$(PROJ).so.$(MAJOR).$(MINOR)
-LIB_MAJOR=lib$(PROJ).so.$(MAJOR)
-LIB_NAME=lib$(PROJ).so
-
 
 # Complining flags
 WFLAGS=-Wall -Wextra
@@ -21,6 +15,7 @@ CFLAGS=-c -fpic $(CSTD)
 SRCDIR=./src
 OBJDIR=./obj
 TSTDIR=./test
+LIBDIR=./lib
 BINDIR=./bin
 
 # Files
@@ -29,7 +24,18 @@ HEAD=$(wildcard $(SRCDIR)/*.h)
 OBJS=$(addprefix $(OBJDIR)/, $(patsubst %.c, %.o, $(notdir $(SRCS))))
 TSTS=$(wildcard $(TSTDIR)/*.c)
 
-LOCAL_LIB=$(BINDIR)/$(LIB_NAME)
+# Library names
+LIB_MAJOR_MINOR_PATCH=lib$(PROJ).so.$(MAJOR).$(MINOR).$(PATCH)
+LIB_MAJOR_MINOR=lib$(PROJ).so.$(MAJOR).$(MINOR)
+LIB_MAJOR=lib$(PROJ).so.$(MAJOR)
+LIB_NAME=lib$(PROJ).so
+LIB_SNAME=lib$(PROJ).a
+
+LOCAL_LIB_MMP=$(LIBDIR)/$(LIB_MAJOR_MINOR_PATCH)
+LOCAL_LIB_MM=$(LIBDIR)/$(LIB_MAJOR_MINOR)
+LOCAL_LIB_M=$(LIBDIR)/$(LIB_MAJOR)
+LOCAL_LIB=$(LIBDIR)/$(LIB_NAME)
+LOCAL_SLIB=$(LIBDIR)/$(LIB_SNAME)
 
 # Creates a directory if it does not yet exist
 define make_dir_if_nonexist 
@@ -41,7 +47,7 @@ define re_dir
 $(2)/$(notdir $(1))
 endef
 
-# 
+# compile objects with optional params 
 define cond_compile_param
 	@if [ "$(notdir $(1))" = "log" ]; then \
 		echo "gcc $(CFLAGS) $(WFLAGS) $(call re_dir,$(1),$(SRCDIR)).c -lpthread -o $(1).o -DLOG_USE_COLOR" \
@@ -51,19 +57,28 @@ define cond_compile_param
 		&& gcc $(CFLAGS) $(WFLAGS) $(call re_dir,$(1),$(SRCDIR)).c -lpthread -o $(1).o; \
 	fi
 endef
-all: $(LOCAL_LIB)
+
+all: $(LOCAL_LIB) $(LOCAL_SLIB)
 
 #compiles the tests and outputs them in the bin dir
 tests: $(TSTS)
 
 #ensure we have the shared library
 $(TSTS): $(LOCAL_LIB)
-	gcc $(CSTD) -L$(BINDIR) -l$(PROJ) -lcriterion $*.c -o $(call re_dir,$*,$(BINDIR))
+	$(call make_dir_if_nonexist,$(BINDIR))
+	gcc $(CSTD) $*.c -o $(call re_dir,$*,$(BINDIR)) -L$(LIBDIR) -l$(PROJ) -lcriterion 
 
 #compiles the ccds library and outputs it into the bin dir
 $(LOCAL_LIB): $(OBJS)
-	$(call make_dir_if_nonexist,$(BINDIR))
-	gcc $(CSTD) -shared -Wl,-soname,$(LOCAL_LIB) -o $(LOCAL_LIB) $(OBJS)
+	$(call make_dir_if_nonexist,$(LIBDIR))
+	gcc $(CSTD) -shared $(OBJS) -Wl,-soname,$(LOCAL_LIB_MM) -o $(LOCAL_LIB_MMP)
+	ln -s $(LOCAL_LIB_MMP) $(LOCAL_LIB_M)
+	ln -s $(LOCAL_LIB_MMP) $(LOCAL_LIB)
+
+# Compiles static CCDS library
+$(LOCAL_SLIB): $(OBJS)	
+	$(call make_dir_if_nonexist,$(LIBDIR))
+	ar rcs $(LOCAL_SLIB) $(OBJS) 
 
 #the object files depend on the src
 $(OBJS): $(SRCS)
@@ -75,4 +90,5 @@ $(SRCS): $(HEAD)
 # cleanout binaries
 clean: 
 	rm -r $(OBJDIR)
+	rm -r $(LIBDIR)
 	rm -r $(BINDIR)
